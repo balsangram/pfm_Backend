@@ -1,24 +1,27 @@
-import dotenv from 'dotenv';
 import { connectDB } from './src/cinfig/db.js';
 import { PORT } from './src/cinfig/config.dotenv.js';
 import { app } from './app.js';
-
-// dotenv.config();
+import allSeeders from './seeders/index.js';
+import chalk from 'chalk';
 
 // Async server start
 async function server() {
     try {
+
         // Connect to MongoDB
         await connectDB();
-        console.log('MongoDB connected successfully');
+        console.log(chalk.green('MongoDB connected successfully'));
+
+        // Seed the database
+        await allSeeders();
 
         // Start server
         const port = PORT || 8000;
         app.listen(port, () => {
-            console.log(`Server running on port ${port}`);
+            console.log(chalk.green(`Server running on port ${port}`));
         });
     } catch (error) {
-        console.error('Failed to connect to MongoDB:', error);
+        console.error(chalk.red('Failed to connect to MongoDB:', error));
         process.exit(1); // exit process if connection fails
     }
 }
