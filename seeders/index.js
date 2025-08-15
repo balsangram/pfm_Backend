@@ -1,8 +1,8 @@
-import { connectDB } from "../src/cinfig/db.js";
 import seedAdminData from "./admin.seeders.js";
 import seedDeliveryPartnerData from "./deliveryPartner.seeders.js";
 import seedManagerData from "./manager.seeders.js";
-import seedStoreData from "./store.seedera.js";
+import seedStoreData from "./store.seeders.js";
+import seedUserData from "./user.seeders.js";
 
 async function allSeeders() {
     try {
@@ -11,6 +11,7 @@ async function allSeeders() {
         await seedDeliveryPartnerData();
         await seedManagerData();
         await seedStoreData();
+        await seedUserData();
 
     } catch (error) {
         console.log("Error seeding data:", error);
