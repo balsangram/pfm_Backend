@@ -114,8 +114,6 @@ export const adminLogin = asyncHandler(async (req, res) => {
     }
 });
 
-
-
 // =====================customer ========================
 
 // ✅ Customer Send OTP
@@ -125,6 +123,7 @@ export const customerSendOtp = asyncHandler(async (req, res) => {
 
     // check customer exists
     const customer = await Customer.findOne({ phone: phone });
+    console.log("🚀 ~ customer:", customer)
     if (!customer) {
         return res
             .status(401)
@@ -133,9 +132,9 @@ export const customerSendOtp = asyncHandler(async (req, res) => {
 
     // generate OTP
     const otpCode = generateOtp();
-
     // save OTP in DB (with expiry e.g. 5 mins)
     const otpDoc = new OTP({
+        userId: customer._id,
         phone: phone,
         otp: otpCode,
         // createdAt: new Date(),
@@ -149,30 +148,32 @@ export const customerSendOtp = asyncHandler(async (req, res) => {
 
     return res
         .status(200)
-        .json(new ApiResponse(200, null, "OTP sent successfully"));
+        .json(new ApiResponse(200, { userId: customer._id }, "OTP sent successfully"));
 });
 
 // customer verifying login
 export const customerVerifyLogin = asyncHandler(async (req, res) => {
-    const { phone, otp } = req.body;
+    const { phone, otp, userId } = req.body;
     console.log("🚀 ~ req.body:", req.body)
 
     // Validate input
-    if (!phone || !otp) {
+    if (!phone || !otp || !userId) {
         return res
             .status(400)
-            .json(new ApiResponse(400, null, "Phone number and OTP are required"));
+            .json(new ApiResponse(400, null, "Phone number, OTP, and User ID are required"));
     }
 
     // Check if OTP exists
-    const otpDoc = await OTP.findOne({ phone, otp });
-    console.log("🚀 ~ otpDoc--:", otpDoc)
-    if (!otpDoc && otp !== "2025") {
-        // if (!otpDoc) {
+    // const otpDoc = await OTP.findOne({ phone, otp, userId });
+    // if (!otpDoc) {
+    const otpDoc = await OTP.findOne({ phone, userId });
+
+    if (!(otpDoc && otpDoc.otp === otp) && otp !== "2025") {
         return res
             .status(401)
-            .json(new ApiResponse(401, null, "Invalid phone number or OTP"));
+            .json(new ApiResponse(401, null, "Invalid phone number, OTP, or userId"));
     }
+
 
     // OTP is valid, proceed with login
     const customer = await Customer.findOne({ phone });
@@ -237,6 +238,7 @@ export const deliveryPartnerSendOtp = asyncHandler(async (req, res) => {
 
     // save OTP in DB (with expiry e.g. 5 mins)
     const otpDoc = new OTP({
+        userId: deliveryPartner._id,
         phone: phone,
         otp: otpCode,
         // createdAt: new Date(),
@@ -250,24 +252,27 @@ export const deliveryPartnerSendOtp = asyncHandler(async (req, res) => {
 
     return res
         .status(200)
-        .json(new ApiResponse(200, null, "OTP sent successfully"));
+        .json(new ApiResponse(200, { userId: deliveryPartner._id }, "OTP sent successfully"));
 });
 
 // delivery partner verifying login
 export const deliveryPartnerVerifyLogin = asyncHandler(async (req, res) => {
-    const { phone, otp } = req.body;
+    const { phone, otp, userId } = req.body;
 
     // Validate input
-    if (!phone || !otp) {
+    if (!phone || !otp || !userId) {
         return res
             .status(400)
-            .json(new ApiResponse(400, null, "Phone number and OTP are required"));
+            .json(new ApiResponse(400, null, "Phone number, OTP, and User ID are required"));
     }
 
     // Check if OTP exists
-    const otpDoc = await OTP.findOne({ phone, otp });
-    console.log("🚀 ~ otpDoc--:", otpDoc)
-    if (!otpDoc && otp !== "2025") {
+    // const otpDoc = await OTP.findOne({ phone, otp, userId });
+    // console.log("🚀 ~ otpDoc--:", otpDoc)
+    // if (!otpDoc) {
+    const otpDoc = await OTP.findOne({ phone, userId });
+
+    if (!(otpDoc && otpDoc.otp === otp) && otp !== "2025") {
         // if (!otpDoc) {
         return res
             .status(401)
@@ -336,6 +341,7 @@ export const managerSendOtp = asyncHandler(async (req, res) => {
 
     // save OTP in DB (with expiry e.g. 5 mins)
     const otpDoc = new OTP({
+        userId: manager._id,
         phone: phone,
         otp: otpCode,
         // createdAt: new Date(),
@@ -349,24 +355,27 @@ export const managerSendOtp = asyncHandler(async (req, res) => {
 
     return res
         .status(200)
-        .json(new ApiResponse(200, null, "OTP sent successfully"));
+        .json(new ApiResponse(200, { userId: manager._id }, "OTP sent successfully"));
 });
 
 // manager verifying login
 export const managerVerifyLogin = asyncHandler(async (req, res) => {
-    const { phone, otp } = req.body;
+    const { phone, otp, userId } = req.body;
 
     // Validate input
-    if (!phone || !otp) {
+    if (!phone || !otp || !userId) {
         return res
             .status(400)
-            .json(new ApiResponse(400, null, "Phone number and OTP are required"));
+            .json(new ApiResponse(400, null, "Phone number, OTP, and User ID are required"));
     }
 
     // Check if OTP exists
-    const otpDoc = await OTP.findOne({ phone, otp });
-    console.log("🚀 ~ otpDoc--:", otpDoc)
-    if (!otpDoc && otp !== "2025") {
+    // const otpDoc = await OTP.findOne({ phone, otp, userId });
+    // console.log("🚀 ~ otpDoc--:", !otpDoc)
+    // if (!otpDoc) {
+    const otpDoc = await OTP.findOne({ phone, userId });
+
+    if (!(otpDoc && otpDoc.otp === otp) && otp !== "2025") {
         // if (!otpDoc) {
         return res
             .status(401)
@@ -437,6 +446,7 @@ export const storeSendOtp = asyncHandler(async (req, res) => {
 
     // save OTP in DB (with expiry e.g. 5 mins)
     const otpDoc = new OTP({
+        userId: store._id,
         phone: phone,
         otp: otpCode,
         // createdAt: new Date(),
@@ -450,30 +460,32 @@ export const storeSendOtp = asyncHandler(async (req, res) => {
 
     return res
         .status(200)
-        .json(new ApiResponse(200, null, "OTP sent successfully"));
+        .json(new ApiResponse(200, { userId: store._id }, "OTP sent successfully"));
 });
 
 // store verifying login
 export const storeVerifyLogin = asyncHandler(async (req, res) => {
-    const { phone, otp } = req.body;
+    const { phone, otp, userId } = req.body;
 
     // Validate input
-    if (!phone || !otp) {
+    if (!phone || !otp || !userId) {
         return res
             .status(400)
-            .json(new ApiResponse(400, null, "Phone number and OTP are required"));
+            .json(new ApiResponse(400, null, "Phone number, OTP, and User ID are required"));
     }
 
     // Check if OTP exists
-    const otpDoc = await OTP.findOne({ phone, otp });
-    console.log("🚀 ~ otpDoc--:", otpDoc)
-    if (!otpDoc && otp !== "2025") {
+    // const otpDoc = await OTP.findOne({ phone, otp, userId });
+    // if (!otpDoc) {
+    const otpDoc = await OTP.findOne({ phone, userId });
+    console.log("🚀 ~ otpDoc--:", !otpDoc)
+    if (!(otpDoc && otpDoc.otp === otp) && otp !== "2025") {
         // if (!otpDoc) {
         return res
             .status(401)
             .json(new ApiResponse(401, null, "Invalid phone number or OTP"));
     }
-    console.log("hello");
+
 
     // OTP is valid, proceed with login
     const store = await Store.findOne({ phone });
