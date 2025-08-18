@@ -173,6 +173,10 @@ export const customerVerifyLogin = asyncHandler(async (req, res) => {
             .status(401)
             .json(new ApiResponse(401, null, "Invalid phone number, OTP, or userId"));
     }
+    // ✅ Delete OTP only if it exists in DB
+    if (otpDoc) {
+        await OTP.deleteOne({ _id: otpDoc._id });
+    }
 
 
     // OTP is valid, proceed with login
@@ -280,6 +284,12 @@ export const deliveryPartnerVerifyLogin = asyncHandler(async (req, res) => {
             .json(new ApiResponse(401, null, "Invalid phone number or OTP"));
     }
 
+    // ✅ Delete OTP only if it exists in DB
+    if (otpDoc) {
+        await OTP.deleteOne({ _id: otpDoc._id });
+    }
+
+
     // OTP is valid, proceed with login
     const deliveryPartner = await DeliveryPartner.findOne({ phone });
     if (!deliveryPartner) {
@@ -383,7 +393,11 @@ export const managerVerifyLogin = asyncHandler(async (req, res) => {
             .status(401)
             .json(new ApiResponse(401, null, "Invalid phone number or OTP"));
     }
-    console.log("hello");
+    // ✅ Delete OTP only if it exists in DB
+    if (otpDoc) {
+        await OTP.deleteOne({ _id: otpDoc._id });
+    }
+
 
     // OTP is valid, proceed with login
     const manager = await Manager.findOne({ phone });
@@ -488,6 +502,10 @@ export const storeVerifyLogin = asyncHandler(async (req, res) => {
             .json(new ApiResponse(401, null, "Invalid phone number or OTP"));
     }
 
+    // ✅ Delete OTP only if it exists in DB
+    if (otpDoc) {
+        await OTP.deleteOne({ _id: otpDoc._id });
+    }
 
     // OTP is valid, proceed with login
     const store = await Store.findOne({ phone });
