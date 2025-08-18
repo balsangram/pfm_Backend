@@ -4,6 +4,6 @@ import { managerSendOtp, managerVerifyLogin } from "../controllers/auth.controll
 const router = Router();
 // Manager routes
 router.post("/send-otp", managerSendOtp);
-router.post("/verifying-login", managerVerifyLogin);
+router.post("/verify-login", managerVerifyLogin);
 
 export default router;
