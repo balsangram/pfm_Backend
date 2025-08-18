@@ -194,12 +194,12 @@ export const customerVerifyLogin = asyncHandler(async (req, res) => {
         await customer.save();
 
         // Set refresh token in HTTP-only cookie
-        res.cookie("refreshToken", refreshToken, {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === "production",
-            sameSite: "strict",
-            maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-        });
+        // res.cookie("refreshToken", refreshToken, {
+        //     httpOnly: true,
+        //     secure: process.env.NODE_ENV === "production",
+        //     sameSite: "strict",
+        //     maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+        // });
 
         return res.status(200).json(
             new ApiResponse(
@@ -207,6 +207,7 @@ export const customerVerifyLogin = asyncHandler(async (req, res) => {
                 {
                     user: { id: customer._id, phone: customer.phone, role: "customer" },
                     accessToken,
+                    refreshToken,
                 },
                 "Customer login successful"
             )
@@ -297,12 +298,12 @@ export const deliveryPartnerVerifyLogin = asyncHandler(async (req, res) => {
         await deliveryPartner.save();
 
         // Set refresh token in HTTP-only cookie
-        res.cookie("refreshToken", refreshToken, {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === "production",
-            sameSite: "strict",
-            maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-        });
+        // res.cookie("refreshToken", refreshToken, {
+        //     httpOnly: true,
+        //     secure: process.env.NODE_ENV === "production",
+        //     sameSite: "strict",
+        //     maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+        // });
 
         return res.status(200).json(
             new ApiResponse(
@@ -310,6 +311,7 @@ export const deliveryPartnerVerifyLogin = asyncHandler(async (req, res) => {
                 {
                     user: { id: deliveryPartner._id, phone: deliveryPartner.phone, role: "deliveryPartner" },
                     accessToken,
+                    refreshToken,
                 },
                 "Delivery Partner login successful"
             )
@@ -506,12 +508,12 @@ export const storeVerifyLogin = asyncHandler(async (req, res) => {
         await store.save();
 
         // Set refresh token in HTTP-only cookie
-        res.cookie("refreshToken", refreshToken, {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === "production",
-            sameSite: "strict",
-            maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-        });
+        // res.cookie("refreshToken", refreshToken, {
+        //     httpOnly: true,
+        //     secure: process.env.NODE_ENV === "production",
+        //     sameSite: "strict",
+        //     maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+        // });
 
         return res.status(200).json(
             new ApiResponse(
@@ -519,6 +521,7 @@ export const storeVerifyLogin = asyncHandler(async (req, res) => {
                 {
                     user: { id: store._id, phone: store.phone, role: "store" },
                     accessToken,
+                    refreshToken
                 },
                 "Store login successful"
             )
