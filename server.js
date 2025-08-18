@@ -1,5 +1,5 @@
-import { connectDB } from './src/cinfig/db.js';
-import { PORT } from './src/cinfig/config.dotenv.js';
+import { connectDB } from './src/config/db.js';
+import { PORT } from './src/config/config.dotenv.js';
 import { app } from './app.js';
 import allSeeders from './seeders/index.js';
 import chalk from 'chalk';

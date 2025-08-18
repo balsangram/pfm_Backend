@@ -1,12 +1,13 @@
 import chalk from "chalk";
 import deliveryPartnerModel from "../src/models/deliveryPartner/deliveryPartner.model.js";
+import { asyncHandler } from "../src/utils/asyncHandler.js";
 
-async function seedDeliveryPartnerData() {
+const seedDeliveryPartnerData = asyncHandler(async () => {
     try {
         const isDeliveryPartnerExists = await deliveryPartnerModel.findOne({ phone: "6370404471" });
 
         if (isDeliveryPartnerExists) {
-            console.log(chalk.blue("Delivery partner already exists."));
+            // console.log(chalk.blue("Delivery partner already exists."));
             return;
         }
 
@@ -24,6 +25,6 @@ async function seedDeliveryPartnerData() {
     } catch (error) {
         console.log(chalk.red("Error seeding delivery partner data:"), error)
     }
-}
+})
 
 export default seedDeliveryPartnerData;

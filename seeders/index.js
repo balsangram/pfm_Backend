@@ -2,11 +2,11 @@ import seedAdminData from "./admin.seeders.js";
 import seedDeliveryPartnerData from "./deliveryPartner.seeders.js";
 import seedManagerData from "./manager.seeders.js";
 import seedStoreData from "./store.seeders.js";
-import seedUserData from "./user.seeders.js";
+import seedUserData from "./customer.seeders.js";
 
 async function allSeeders() {
     try {
-        console.log("Seeding data...");
+        // console.log("Seeding data...");
         await seedAdminData();
         await seedDeliveryPartnerData();
         await seedManagerData();

@@ -1,13 +1,14 @@
 import chalk from "chalk";
 import storeModel from "../src/models/store/store.model.js";
+import { asyncHandler } from "../src/utils/asyncHandler.js";
 
-async function seedStoreData() {
+const seedStoreData = asyncHandler(async () => {
     try {
 
         const isStoreExist = await storeModel.findOne({ phone: "6370404471" });
 
         if (isStoreExist) {
-            console.log(chalk.blue("Store already exists."));
+            // console.log(chalk.blue("Store already exists."));
             return;
         }
 
@@ -26,6 +27,6 @@ async function seedStoreData() {
     } catch (error) {
         console.log(chalk.red("Error seeding store data:", error));
     }
-}
+})
 
 export default seedStoreData;

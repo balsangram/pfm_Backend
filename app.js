@@ -3,7 +3,8 @@ import cors from "cors";
 import adminRoutes from "./src/routes/admin.routes.js";
 import managerRoutes from "./src/routes/manager.routes.js";
 import storeRoutes from "./src/routes/store.routes.js";
-import driverRoutes from "./src/routes/driver.routes.js";
+import driverRoutes from "./src/routes/deliveryPartner.routes.js";
+import customerRoutes from "./src/routes/customer.routes.js";
 
 const app = express();
 app.use(cors());
@@ -20,6 +21,7 @@ app.get('/api/example', (req, res) => {
 
 // Routes
 app.use("/admin", adminRoutes);
+app.use("/customer", customerRoutes);
 app.use("/manager", managerRoutes);
 app.use("/store", storeRoutes);
 app.use("/driver", driverRoutes);
