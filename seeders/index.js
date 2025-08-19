@@ -8,10 +8,10 @@ async function allSeeders() {
     try {
         // console.log("Seeding data...");
         await seedAdminData();
-        await seedDeliveryPartnerData();
-        await seedManagerData();
-        await seedStoreData();
-        await seedUserData();
+        // await seedDeliveryPartnerData();
+        // await seedManagerData();
+        // await seedStoreData();
+        // await seedUserData();
 
     } catch (error) {
         console.log("Error seeding data:", error);

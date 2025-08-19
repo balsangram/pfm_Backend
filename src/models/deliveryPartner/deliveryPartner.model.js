@@ -31,6 +31,14 @@ const deliveryPartnerSchema = new mongoose.Schema({
         type: Number,
         default: 0
     },
+    totalAccepted: {
+        type: Number,
+        default: 0
+    },
+    totalRejected: {
+        type: Number,
+        default: 0
+    },
     rating: {
         type: Number,
         min: 0,

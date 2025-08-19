@@ -28,20 +28,20 @@ const managerSchema = new mongoose.Schema({
         unique: true,
         trim: true
     },
-    location: {
-        type: String,
-        required: true,
-        trim: true,
-        minlength: 5,
-        maxlength: 200
-    },
-    userLocation: {
-        type: String,
-        required: true,
-        trim: true,
-        minlength: 5,
-        maxlength: 200
-    },
+    // location: {
+    //     type: String,
+    //     required: true,
+    //     trim: true,
+    //     minlength: 5,
+    //     maxlength: 200
+    // },
+    // userLocation: {
+    //     type: String,
+    //     required: true,
+    //     trim: true,
+    //     minlength: 5,
+    //     maxlength: 200
+    // },
     storeName: {
         type: String,
         required: true,
@@ -56,18 +56,26 @@ const managerSchema = new mongoose.Schema({
         minlength: 10,
         maxlength: 300
     },
-    address: {
-        type: String,
-        required: true,
-        trim: true,
-        minlength: 10,
-        maxlength: 300
-    },
-    store: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "Store",
+    // address: {
+    //     type: String,
+    //     required: true,
+    //     trim: true,
+    //     minlength: 10,
+    //     maxlength: 300
+    // },
+    lat: {
+        type: Number,
         required: true
     },
+    long: {
+        type: Number,
+        required: true
+    },
+    // store: {
+    //     type: mongoose.Schema.Types.ObjectId,
+    //     ref: "Store",
+    //     required: true
+    // },
     isActive: {
         type: Boolean,
         default: true
