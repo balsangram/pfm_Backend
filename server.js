@@ -4,6 +4,7 @@ import { app } from './app.js';
 import allSeeders from './seeders/index.js';
 import chalk from 'chalk';
 
+
 // Async server start
 async function server() {
     try {

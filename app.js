@@ -5,10 +5,12 @@ import managerRoutes from "./src/routes/manager.routes.js";
 import storeRoutes from "./src/routes/store.routes.js";
 import deliveryPartnerRoutes from "./src/routes/deliveryPartner.routes.js";
 import customerRoutes from "./src/routes/customer.routes.js";
+import cookieParser from 'cookie-parser'
 
 const app = express();
 app.use(cors());
 app.use(express.json());
+app.use(cookieParser())
 
 // Example route
 app.get('/', (req, res) => {

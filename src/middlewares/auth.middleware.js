@@ -11,6 +11,7 @@ import DeliveryPartner from "../models/deliveryPartner/deliveryPartner.model.js"
 import Manager from "../models/manager/manager.model.js";
 import Store from "../models/store/store.model.js";
 import Customer from "../models/customer/customer.model.js";
+import { ACCESS_TOKEN_SECRET } from "../config/config.dotenv.js";
 
 /**
  * verifyJWT
@@ -32,7 +33,7 @@ export const verifyJWT = asyncHandler(async (req, res, next) => {
 
     let decoded;
     try {
-        decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
+        decoded = jwt.verify(token, ACCESS_TOKEN_SECRET);
     } catch (error) {
         throw new ApiError(401, "Invalid or expired token");
     }

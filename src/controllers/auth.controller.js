@@ -90,6 +90,12 @@ export const adminLogin = asyncHandler(async (req, res) => {
         await admin.save();
 
         // Set refresh token in HTTP-only cookie
+        res.cookie("accessToken", accessToken, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production",
+            sameSite: "strict",
+            maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+        });
         res.cookie("refreshToken", refreshToken, {
             httpOnly: true,
             secure: process.env.NODE_ENV === "production",
@@ -102,12 +108,13 @@ export const adminLogin = asyncHandler(async (req, res) => {
                 200,
                 {
                     user: { id: admin._id, email: admin.email, role: "admin" },
-                    accessToken,
+                    accessToken
                 },
                 "Admin login successful"
             )
         );
     } catch (error) {
+        console.log("🚀 ~ error:", error)
         return res
             .status(500)
             .json(new ApiResponse(500, null, `Token generation failed: ${error.message}`));

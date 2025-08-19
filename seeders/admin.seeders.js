@@ -17,7 +17,7 @@ const seedAdminData = asyncHandler(async () => {
 
         // Hash the password before storing
         const hashedPassword = await bcrypt.hash("1234", 10); // Use a secure password in production
-        console.log("🚀 ~ hashedPassword:", hashedPassword)
+        // console.log("🚀 ~ hashedPassword:", hashedPassword)
 
         // Admin data with hashed password
         const adminData = {
