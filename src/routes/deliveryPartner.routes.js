@@ -10,4 +10,6 @@ router.post("/verify-login", deliveryPartnerVerifyLogin);
 // Protect all subsequent delivery partner routes
 router.use(verifyJWT, verifyRole("deliveryPartner"));
 
+
+
 export default router

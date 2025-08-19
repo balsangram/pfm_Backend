@@ -14,6 +14,7 @@ import {
     REFRESH_TOKEN_VALIDATION_TIME,
 } from "../config/config.dotenv.js";
 import OTP from "../models/otp.model.js";
+import { ApiError } from "../utils/ApiError.js";
 
 
 // Generate Access Token
@@ -556,4 +557,53 @@ export const storeVerifyLogin = asyncHandler(async (req, res) => {
             .status(500)
             .json(new ApiResponse(500, null, `Token generation failed: ${error.message}`));
     }
+});
+
+export const customerRefreshToken = asyncHandler(async (req, res) => {
+    const { refreshToken } = req.body;
+    console.log("🚀 ~ req.body:", req.body)
+    if (!refreshToken) {
+        throw new ApiError(400, 'Refresh token required');
+    }
+
+    let decoded;
+    try {
+        decoded = jwt.verify(refreshToken, REFRESH_TOKEN_SECRET);
+    } catch (error) {
+        throw new ApiError(401, 'Invalid or expired refresh token');
+    }
+
+    // Verify the token is for a customer
+    if (decoded.role !== 'customer') {
+        throw new ApiError(403, 'Invalid token for customer');
+    }
+
+    const customer = await Customer.findById(decoded.userId);
+    if (!customer) {
+        throw new ApiError(404, 'Customer not found');
+    }
+
+    // Check if the stored refresh token matches
+    if (customer.refreshToken !== refreshToken) {
+        throw new ApiError(401, 'Refresh token revoked');
+    }
+
+    // Generate new tokens
+    const newAccessToken = generateAccessToken(customer, 'customer');
+    const newRefreshToken = generateRefreshToken(customer, 'customer');
+
+    // Update the refresh token in database
+    customer.refreshToken = newRefreshToken;
+    await customer.save();
+
+    return res.status(200).json(
+        new ApiResponse(
+            200,
+            {
+                accessToken: newAccessToken,
+                refreshToken: newRefreshToken
+            },
+            "Tokens refreshed successfully"
+        )
+    );
 });

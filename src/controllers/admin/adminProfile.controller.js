@@ -124,10 +124,12 @@ const adminLogout = asyncHandler(async (req, res) => {
     // Logic for admin logout
 });
 
+
+
 export const AdminProfileController = {
     adminProfile,
     adminUpdateProfile,
     adminDeleteAccount,
     adminChangePassword,
-    adminLogout
+    adminLogout,
 };

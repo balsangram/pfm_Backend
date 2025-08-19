@@ -21,6 +21,7 @@ app.get('/api/example', (req, res) => {
     res.json({ message: 'Example route' });
 });
 
+
 // Routes
 app.use("/admin", adminRoutes);
 app.use("/customer", customerRoutes);

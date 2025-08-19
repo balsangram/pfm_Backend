@@ -1,9 +1,9 @@
 import { asyncHandler } from "../../utils/asyncHandler.js";
 
-
 const getDeliveryPartners = asyncHandler(async (req, res) => {
 
 });
+
 
 const createDeliveryPartner = asyncHandler(async (req, res) => {
     // Logic for creating a new delivery partner
