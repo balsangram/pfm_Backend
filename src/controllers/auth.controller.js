@@ -316,12 +316,12 @@ export const customerRefreshToken = asyncHandler(async (req, res) => {
 export const deliveryPartnerSendOtp = asyncHandler(async (req, res) => {
     const { phone } = req.body;
 
-    // check delivery partner exists
+    // check delivery partner exists (must be created by admin first)
     const deliveryPartner = await DeliveryPartner.findOne({ phone: phone });
     if (!deliveryPartner) {
         return res
             .status(401)
-            .json(new ApiResponse(401, null, "Invalid phone number"));
+            .json(new ApiResponse(401, null, "Invalid phone number. Please contact admin to register."));
     }
 
     // generate OTP
@@ -405,12 +405,39 @@ export const deliveryPartnerVerifyLogin = asyncHandler(async (req, res) => {
 export const deliveryPartnerRefreshToken = asyncHandler(async (req, res) => {
     const { refreshToken } = req.body;
     
-    const deliveryPartner = await DeliveryPartner.findById(req.user?.id);
+    if (!refreshToken) {
+        throw new ApiError(400, 'Refresh token required');
+    }
+
+    let decoded;
+    try {
+        decoded = jwt.verify(refreshToken, REFRESH_TOKEN_SECRET);
+    } catch (error) {
+        throw new ApiError(401, 'Invalid or expired refresh token');
+    }
+
+    // Verify the token is for the correct role
+    if (decoded.role !== 'deliveryPartner') {
+        throw new ApiError(403, 'Invalid token for deliveryPartner');
+    }
+
+    const deliveryPartner = await DeliveryPartner.findById(decoded.userId);
     if (!deliveryPartner) {
         throw new ApiError(404, 'Delivery Partner not found');
     }
 
-    const { newAccessToken, newRefreshToken } = await refreshTokens(deliveryPartner, 'deliveryPartner', refreshToken);
+    // Check if the stored refresh token matches
+    if (deliveryPartner.refreshToken !== refreshToken) {
+        throw new ApiError(401, 'Refresh token revoked');
+    }
+
+    // Generate new tokens
+    const newAccessToken = generateAccessToken(deliveryPartner, 'deliveryPartner');
+    const newRefreshToken = generateRefreshToken(deliveryPartner, 'deliveryPartner');
+
+    // Update the refresh token in database
+    deliveryPartner.refreshToken = newRefreshToken;
+    await deliveryPartner.save();
 
     return res.status(200).json(
         new ApiResponse(
@@ -518,12 +545,39 @@ export const managerVerifyLogin = asyncHandler(async (req, res) => {
 export const managerRefreshToken = asyncHandler(async (req, res) => {
     const { refreshToken } = req.body;
     
-    const manager = await Manager.findById(req.user?.id);
+    if (!refreshToken) {
+        throw new ApiError(400, 'Refresh token required');
+    }
+
+    let decoded;
+    try {
+        decoded = jwt.verify(refreshToken, REFRESH_TOKEN_SECRET);
+    } catch (error) {
+        throw new ApiError(401, 'Invalid or expired refresh token');
+    }
+
+    // Verify the token is for the correct role
+    if (decoded.role !== 'manager') {
+        throw new ApiError(403, 'Invalid token for manager');
+    }
+
+    const manager = await Manager.findById(decoded.userId);
     if (!manager) {
         throw new ApiError(404, 'Manager not found');
     }
 
-    const { newAccessToken, newRefreshToken } = await refreshTokens(manager, 'manager', refreshToken);
+    // Check if the stored refresh token matches
+    if (manager.refreshToken !== refreshToken) {
+        throw new ApiError(401, 'Refresh token revoked');
+    }
+
+    // Generate new tokens
+    const newAccessToken = generateAccessToken(manager, 'manager');
+    const newRefreshToken = generateRefreshToken(manager, 'manager');
+
+    // Update the refresh token in database
+    manager.refreshToken = newRefreshToken;
+    await manager.save();
 
     return res.status(200).json(
         new ApiResponse(
@@ -631,12 +685,39 @@ export const storeVerifyLogin = asyncHandler(async (req, res) => {
 export const storeRefreshToken = asyncHandler(async (req, res) => {
     const { refreshToken } = req.body;
     
-    const store = await Store.findById(req.user?.id);
+    if (!refreshToken) {
+        throw new ApiError(400, 'Refresh token required');
+    }
+
+    let decoded;
+    try {
+        decoded = jwt.verify(refreshToken, REFRESH_TOKEN_SECRET);
+    } catch (error) {
+        throw new ApiError(401, 'Invalid or expired refresh token');
+    }
+
+    // Verify the token is for the correct role
+    if (decoded.role !== 'store') {
+        throw new ApiError(403, 'Invalid token for store');
+    }
+
+    const store = await Store.findById(decoded.userId);
     if (!store) {
         throw new ApiError(404, 'Store not found');
     }
 
-    const { newAccessToken, newRefreshToken } = await refreshTokens(store, 'store', refreshToken);
+    // Check if the stored refresh token matches
+    if (store.refreshToken !== refreshToken) {
+        throw new ApiError(401, 'Refresh token revoked');
+    }
+
+    // Generate new tokens
+    const newAccessToken = generateAccessToken(store, 'store');
+    const newRefreshToken = generateRefreshToken(store, 'store');
+
+    // Update the refresh token in database
+    store.refreshToken = newRefreshToken;
+    await store.save();
 
     return res.status(200).json(
         new ApiResponse(

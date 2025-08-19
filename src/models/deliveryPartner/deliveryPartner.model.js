@@ -14,6 +14,10 @@ const deliveryPartnerSchema = new mongoose.Schema({
         unique: true,
         trim: true
     },
+    refreshToken: {
+        type: String,
+        default: null
+    },
     status: {
         type: String,
         enum: ['verified', 'pending'],
