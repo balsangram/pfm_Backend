@@ -28,9 +28,10 @@ router.patch("/meat-centers/:id", MeatCenterController.updateMeatCenter);
 router.delete("/meat-centers/:id", MeatCenterController.deleteMeatCenter);
 
 // Delivery Partner
-router.get("/delivery-partners", DeliveryPartnerController.getDeliveryPartners);
+router.get("/delivery-partners", DeliveryPartnerController.getAllDeliveryPartners);
+router.get("/delivery-partners/:id", DeliveryPartnerController.getDeliveryPartnerById);
 router.post("/delivery-partners", DeliveryPartnerController.createDeliveryPartner);
-router.patch("/delivery-partners/:id", DeliveryPartnerController.updateDeliveryPartner);
+router.patch("/delivery-partners/:id", DeliveryPartnerController.updateDeliveryPartnerStatus);
 router.delete("/delivery-partners/:id", DeliveryPartnerController.deleteDeliveryPartner);
 
 // Send Notification

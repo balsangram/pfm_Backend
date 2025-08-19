@@ -1,5 +1,40 @@
 import Joi from 'joi';
 
+// Manager Authentication Validation Schemas
+export const managerSendOtpSchema = Joi.object({
+	phone: Joi.string()
+		.pattern(/^[0-9]{10,15}$/)
+		.required()
+		.messages({
+			'string.pattern.base': 'Please provide a valid phone number (10-15 digits)',
+			'any.required': 'Phone number is required'
+		})
+});
+
+export const managerVerifyLoginSchema = Joi.object({
+	phone: Joi.string()
+		.pattern(/^[0-9]{10,15}$/)
+		.required()
+		.messages({
+			'string.pattern.base': 'Please provide a valid phone number (10-15 digits)',
+			'any.required': 'Phone number is required'
+		}),
+	otp: Joi.string()
+		.pattern(/^[0-9]{4}$/)
+		.required()
+		.messages({
+			'string.pattern.base': 'OTP must be a 4-digit number',
+			'any.required': 'OTP is required'
+		}),
+	userId: Joi.string()
+		.pattern(/^[0-9a-fA-F]{24}$/)
+		.required()
+		.messages({
+			'string.pattern.base': 'Invalid user ID format',
+			'any.required': 'User ID is required'
+		})
+});
+
 // Manager Profile Validation Schemas
 export const updateProfileSchema = Joi.object({
     firstName: Joi.string().min(2).max(50).required().messages({
