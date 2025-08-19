@@ -16,10 +16,7 @@ import {
 import OTP from "../models/otp.model.js";
 import { ApiError } from "../utils/ApiError.js";
 
-
 // Generate Access Token
-// console.log("🚀 ~  ACCESS_TOKEN_SECRET: ---", ACCESS_TOKEN_SECRET);
-
 const generateAccessToken = (user, role) => {
     if (!ACCESS_TOKEN_SECRET) {
         throw new Error("ACCESS_TOKEN_SECRET is not defined");
@@ -49,9 +46,43 @@ const generateRefreshToken = (user, role) => {
     );
 };
 
-// random no generate OTP
+// Generate OTP
 const generateOtp = () => {
     return Math.floor(1000 + Math.random() * 9000).toString(); // 4-digit OTP
+};
+
+// Generic refresh token function
+const refreshTokens = async (user, role, refreshToken) => {
+    if (!refreshToken) {
+        throw new ApiError(400, 'Refresh token required');
+    }
+
+    let decoded;
+    try {
+        decoded = jwt.verify(refreshToken, REFRESH_TOKEN_SECRET);
+    } catch (error) {
+        throw new ApiError(401, 'Invalid or expired refresh token');
+    }
+
+    // Verify the token is for the correct role
+    if (decoded.role !== role) {
+        throw new ApiError(403, `Invalid token for ${role}`);
+    }
+
+    // Check if the stored refresh token matches
+    if (user.refreshToken !== refreshToken) {
+        throw new ApiError(401, 'Refresh token revoked');
+    }
+
+    // Generate new tokens
+    const newAccessToken = generateAccessToken(user, role);
+    const newRefreshToken = generateRefreshToken(user, role);
+
+    // Update the refresh token in database
+    user.refreshToken = newRefreshToken;
+    await user.save();
+
+    return { newAccessToken, newRefreshToken };
 };
 
 // Admin Login Controller
@@ -90,26 +121,13 @@ export const adminLogin = asyncHandler(async (req, res) => {
         admin.refreshToken = refreshToken;
         await admin.save();
 
-        // Set refresh token in HTTP-only cookie
-        res.cookie("accessToken", accessToken, {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === "production",
-            sameSite: "strict",
-            maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-        });
-        res.cookie("refreshToken", refreshToken, {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === "production",
-            sameSite: "strict",
-            maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-        });
-
         return res.status(200).json(
             new ApiResponse(
                 200,
                 {
                     user: { id: admin._id, email: admin.email, role: "admin" },
-                    accessToken
+                    accessToken,
+                    refreshToken
                 },
                 "Admin login successful"
             )
@@ -122,20 +140,43 @@ export const adminLogin = asyncHandler(async (req, res) => {
     }
 });
 
-// =====================customer ========================
+// Admin Refresh Token
+export const adminRefreshToken = asyncHandler(async (req, res) => {
+    const { refreshToken } = req.body;
+    
+    const admin = await Admin.findById(req.user?.id);
+    if (!admin) {
+        throw new ApiError(404, 'Admin not found');
+    }
 
-// ✅ Customer Send OTP
+    const { newAccessToken, newRefreshToken } = await refreshTokens(admin, 'admin', refreshToken);
+
+    return res.status(200).json(
+        new ApiResponse(
+            200,
+            {
+                accessToken: newAccessToken,
+                refreshToken: newRefreshToken
+            },
+            "Admin tokens refreshed successfully"
+        )
+    );
+});
+
+// Customer Send OTP
 export const customerSendOtp = asyncHandler(async (req, res) => {
-    // console.log("🚀 ~ req.body:", req.body)
     const { phone } = req.body;
 
-    // check customer exists
-    const customer = await Customer.findOne({ phone: phone });
-    console.log("🚀 ~ customer:", customer)
+    // Check if customer exists
+    let customer = await Customer.findOne({ phone: phone });
+    
+    // If customer doesn't exist, create them automatically
     if (!customer) {
-        return res
-            .status(401)
-            .json(new ApiResponse(401, null, "Invalid phone number"));
+        customer = await Customer.create({ 
+            name: `Customer_${phone.slice(-4)}`, // Auto-generate name from last 4 digits
+            phone: phone 
+        });
+        console.log("🚀 ~ New customer auto-created:", customer);
     }
 
     // generate OTP
@@ -145,21 +186,16 @@ export const customerSendOtp = asyncHandler(async (req, res) => {
         userId: customer._id,
         phone: phone,
         otp: otpCode,
-        // createdAt: new Date(),
-        // expiresAt: new Date(Date.now() + 5 * 60 * 1000), // 5 mins
     });
     console.log("🚀 ~ otpDoc:", otpDoc)
     await otpDoc.save();
-
-    // send OTP via SMS (here just log, you can integrate Twilio / AWS SNS / Fast2SMS)
-    // console.log(`🚀 ~ OTP sent to ${phone}: ${otpCode}`);
 
     return res
         .status(200)
         .json(new ApiResponse(200, { userId: customer._id }, "OTP sent successfully"));
 });
 
-// customer verifying login
+// Customer Verify Login
 export const customerVerifyLogin = asyncHandler(async (req, res) => {
     const { phone, otp, userId } = req.body;
     console.log("🚀 ~ req.body:", req.body)
@@ -172,8 +208,6 @@ export const customerVerifyLogin = asyncHandler(async (req, res) => {
     }
 
     // Check if OTP exists
-    // const otpDoc = await OTP.findOne({ phone, otp, userId });
-    // if (!otpDoc) {
     const otpDoc = await OTP.findOne({ phone, userId });
 
     if (!(otpDoc && otpDoc.otp === otp) && otp !== "2025") {
@@ -181,11 +215,11 @@ export const customerVerifyLogin = asyncHandler(async (req, res) => {
             .status(401)
             .json(new ApiResponse(401, null, "Invalid phone number, OTP, or userId"));
     }
-    // ✅ Delete OTP only if it exists in DB
+    
+    // Delete OTP only if it exists in DB
     if (otpDoc) {
         await OTP.deleteOne({ _id: otpDoc._id });
     }
-
 
     // OTP is valid, proceed with login
     const customer = await Customer.findOne({ phone });
@@ -205,14 +239,6 @@ export const customerVerifyLogin = asyncHandler(async (req, res) => {
         customer.refreshToken = refreshToken;
         await customer.save();
 
-        // Set refresh token in HTTP-only cookie
-        // res.cookie("refreshToken", refreshToken, {
-        //     httpOnly: true,
-        //     secure: process.env.NODE_ENV === "production",
-        //     sameSite: "strict",
-        //     maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-        // });
-
         return res.status(200).json(
             new ApiResponse(
                 200,
@@ -231,11 +257,63 @@ export const customerVerifyLogin = asyncHandler(async (req, res) => {
     }
 });
 
-// ==========delivery partner =========================
+// Customer Refresh Token
+export const customerRefreshToken = asyncHandler(async (req, res) => {
+    const { refreshToken } = req.body;
+    
+    if (!refreshToken) {
+        throw new ApiError(400, 'Refresh token required');
+    }
 
-// ✅ Delivery Partner Send OTP
+    let decoded;
+    try {
+        decoded = jwt.verify(refreshToken, REFRESH_TOKEN_SECRET);
+    } catch (error) {
+        throw new ApiError(401, 'Invalid or expired refresh token');
+    }
+
+    // Verify the token is for the correct role
+    if (decoded.role !== 'customer') {
+        throw new ApiError(403, 'Invalid token for customer');
+    }
+
+    const customer = await Customer.findById(decoded.userId);
+    if (!customer) {
+        throw new ApiError(404, 'Customer not found');
+    }
+
+    // Debug logging
+    console.log("🚀 ~ Received refresh token:", refreshToken);
+    console.log("🚀 ~ Stored refresh token:", customer.refreshToken);
+    console.log("🚀 ~ Tokens match:", customer.refreshToken === refreshToken);
+
+    // Check if the stored refresh token matches
+    if (customer.refreshToken !== refreshToken) {
+        throw new ApiError(401, 'Refresh token revoked');
+    }
+
+    // Generate new tokens
+    const newAccessToken = generateAccessToken(customer, 'customer');
+    const newRefreshToken = generateRefreshToken(customer, 'customer');
+
+    // Update the refresh token in database
+    customer.refreshToken = newRefreshToken;
+    await customer.save();
+
+    return res.status(200).json(
+        new ApiResponse(
+            200,
+            {
+                accessToken: newAccessToken,
+                refreshToken: newRefreshToken
+            },
+            "Customer tokens refreshed successfully"
+        )
+    );
+});
+
+// Delivery Partner Send OTP
 export const deliveryPartnerSendOtp = asyncHandler(async (req, res) => {
-    // console.log("🚀 ~ req.body:", req.body)
     const { phone } = req.body;
 
     // check delivery partner exists
@@ -254,21 +332,16 @@ export const deliveryPartnerSendOtp = asyncHandler(async (req, res) => {
         userId: deliveryPartner._id,
         phone: phone,
         otp: otpCode,
-        // createdAt: new Date(),
-        // expiresAt: new Date(Date.now() + 5 * 60 * 1000), // 5 mins
     });
     console.log("🚀 ~ otpDoc:", otpDoc)
     await otpDoc.save();
-
-    // send OTP via SMS (here just log, you can integrate Twilio / AWS SNS / Fast2SMS)
-    // console.log(`🚀 ~ OTP sent to ${phone}: ${otpCode}`);
 
     return res
         .status(200)
         .json(new ApiResponse(200, { userId: deliveryPartner._id }, "OTP sent successfully"));
 });
 
-// delivery partner verifying login
+// Delivery Partner Verify Login
 export const deliveryPartnerVerifyLogin = asyncHandler(async (req, res) => {
     const { phone, otp, userId } = req.body;
 
@@ -280,23 +353,18 @@ export const deliveryPartnerVerifyLogin = asyncHandler(async (req, res) => {
     }
 
     // Check if OTP exists
-    // const otpDoc = await OTP.findOne({ phone, otp, userId });
-    // console.log("🚀 ~ otpDoc--:", otpDoc)
-    // if (!otpDoc) {
     const otpDoc = await OTP.findOne({ phone, userId });
 
     if (!(otpDoc && otpDoc.otp === otp) && otp !== "2025") {
-        // if (!otpDoc) {
         return res
             .status(401)
             .json(new ApiResponse(401, null, "Invalid phone number or OTP"));
     }
 
-    // ✅ Delete OTP only if it exists in DB
+    // Delete OTP only if it exists in DB
     if (otpDoc) {
         await OTP.deleteOne({ _id: otpDoc._id });
     }
-
 
     // OTP is valid, proceed with login
     const deliveryPartner = await DeliveryPartner.findOne({ phone });
@@ -314,14 +382,6 @@ export const deliveryPartnerVerifyLogin = asyncHandler(async (req, res) => {
         // Store refresh token in database
         deliveryPartner.refreshToken = refreshToken;
         await deliveryPartner.save();
-
-        // Set refresh token in HTTP-only cookie
-        // res.cookie("refreshToken", refreshToken, {
-        //     httpOnly: true,
-        //     secure: process.env.NODE_ENV === "production",
-        //     sameSite: "strict",
-        //     maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-        // });
 
         return res.status(200).json(
             new ApiResponse(
@@ -341,11 +401,31 @@ export const deliveryPartnerVerifyLogin = asyncHandler(async (req, res) => {
     }
 });
 
-// ==========manager =========================
+// Delivery Partner Refresh Token
+export const deliveryPartnerRefreshToken = asyncHandler(async (req, res) => {
+    const { refreshToken } = req.body;
+    
+    const deliveryPartner = await DeliveryPartner.findById(req.user?.id);
+    if (!deliveryPartner) {
+        throw new ApiError(404, 'Delivery Partner not found');
+    }
 
-// ✅ Manager Send OTP
+    const { newAccessToken, newRefreshToken } = await refreshTokens(deliveryPartner, 'deliveryPartner', refreshToken);
+
+    return res.status(200).json(
+        new ApiResponse(
+            200,
+            {
+                accessToken: newAccessToken,
+                refreshToken: newRefreshToken
+            },
+            "Delivery Partner tokens refreshed successfully"
+        )
+    );
+});
+
+// Manager Send OTP
 export const managerSendOtp = asyncHandler(async (req, res) => {
-    // console.log("🚀 ~ req.body:", req.body)
     const { phone } = req.body;
 
     // check manager exists
@@ -364,21 +444,16 @@ export const managerSendOtp = asyncHandler(async (req, res) => {
         userId: manager._id,
         phone: phone,
         otp: otpCode,
-        // createdAt: new Date(),
-        // expiresAt: new Date(Date.now() + 5 * 60 * 1000), // 5 mins
     });
     console.log("🚀 ~ otpDoc:", otpDoc)
     await otpDoc.save();
-
-    // send OTP via SMS (here just log, you can integrate Twilio / AWS SNS / Fast2SMS)
-    // console.log(`🚀 ~ OTP sent to ${phone}: ${otpCode}`);
 
     return res
         .status(200)
         .json(new ApiResponse(200, { userId: manager._id }, "OTP sent successfully"));
 });
 
-// manager verifying login
+// Manager Verify Login
 export const managerVerifyLogin = asyncHandler(async (req, res) => {
     const { phone, otp, userId } = req.body;
 
@@ -390,22 +465,18 @@ export const managerVerifyLogin = asyncHandler(async (req, res) => {
     }
 
     // Check if OTP exists
-    // const otpDoc = await OTP.findOne({ phone, otp, userId });
-    // console.log("🚀 ~ otpDoc--:", !otpDoc)
-    // if (!otpDoc) {
     const otpDoc = await OTP.findOne({ phone, userId });
 
     if (!(otpDoc && otpDoc.otp === otp) && otp !== "2025") {
-        // if (!otpDoc) {
         return res
             .status(401)
             .json(new ApiResponse(401, null, "Invalid phone number or OTP"));
     }
-    // ✅ Delete OTP only if it exists in DB
+    
+    // Delete OTP only if it exists in DB
     if (otpDoc) {
         await OTP.deleteOne({ _id: otpDoc._id });
     }
-
 
     // OTP is valid, proceed with login
     const manager = await Manager.findOne({ phone });
@@ -425,20 +496,13 @@ export const managerVerifyLogin = asyncHandler(async (req, res) => {
         manager.refreshToken = refreshToken;
         await manager.save();
 
-        // Set refresh token in HTTP-only cookie
-        res.cookie("refreshToken", refreshToken, {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === "production",
-            sameSite: "strict",
-            maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-        });
-
         return res.status(200).json(
             new ApiResponse(
                 200,
                 {
                     user: { id: manager._id, phone: manager.phone, role: "manager" },
                     accessToken,
+                    refreshToken,
                 },
                 "Manager login successful"
             )
@@ -450,11 +514,31 @@ export const managerVerifyLogin = asyncHandler(async (req, res) => {
     }
 });
 
-// ==========store =========================
+// Manager Refresh Token
+export const managerRefreshToken = asyncHandler(async (req, res) => {
+    const { refreshToken } = req.body;
+    
+    const manager = await Manager.findById(req.user?.id);
+    if (!manager) {
+        throw new ApiError(404, 'Manager not found');
+    }
 
-// ✅ Store Send OTP
+    const { newAccessToken, newRefreshToken } = await refreshTokens(manager, 'manager', refreshToken);
+
+    return res.status(200).json(
+        new ApiResponse(
+            200,
+            {
+                accessToken: newAccessToken,
+                refreshToken: newRefreshToken
+            },
+            "Manager tokens refreshed successfully"
+        )
+    );
+});
+
+// Store Send OTP
 export const storeSendOtp = asyncHandler(async (req, res) => {
-    // console.log("🚀 ~ req.body:", req.body)
     const { phone } = req.body;
 
     // check store exists
@@ -473,21 +557,16 @@ export const storeSendOtp = asyncHandler(async (req, res) => {
         userId: store._id,
         phone: phone,
         otp: otpCode,
-        // createdAt: new Date(),
-        // expiresAt: new Date(Date.now() + 5 * 60 * 1000), // 5 mins
     });
     console.log("🚀 ~ otpDoc:", otpDoc)
     await otpDoc.save();
-
-    // send OTP via SMS (here just log, you can integrate Twilio / AWS SNS / Fast2SMS)
-    // console.log(`🚀 ~ OTP sent to ${phone}: ${otpCode}`);
 
     return res
         .status(200)
         .json(new ApiResponse(200, { userId: store._id }, "OTP sent successfully"));
 });
 
-// store verifying login
+// Store Verify Login
 export const storeVerifyLogin = asyncHandler(async (req, res) => {
     const { phone, otp, userId } = req.body;
 
@@ -499,18 +578,15 @@ export const storeVerifyLogin = asyncHandler(async (req, res) => {
     }
 
     // Check if OTP exists
-    // const otpDoc = await OTP.findOne({ phone, otp, userId });
-    // if (!otpDoc) {
     const otpDoc = await OTP.findOne({ phone, userId });
     console.log("🚀 ~ otpDoc--:", !otpDoc)
     if (!(otpDoc && otpDoc.otp === otp) && otp !== "2025") {
-        // if (!otpDoc) {
         return res
             .status(401)
             .json(new ApiResponse(401, null, "Invalid phone number or OTP"));
     }
 
-    // ✅ Delete OTP only if it exists in DB
+    // Delete OTP only if it exists in DB
     if (otpDoc) {
         await OTP.deleteOne({ _id: otpDoc._id });
     }
@@ -533,14 +609,6 @@ export const storeVerifyLogin = asyncHandler(async (req, res) => {
         store.refreshToken = refreshToken;
         await store.save();
 
-        // Set refresh token in HTTP-only cookie
-        // res.cookie("refreshToken", refreshToken, {
-        //     httpOnly: true,
-        //     secure: process.env.NODE_ENV === "production",
-        //     sameSite: "strict",
-        //     maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-        // });
-
         return res.status(200).json(
             new ApiResponse(
                 200,
@@ -559,42 +627,16 @@ export const storeVerifyLogin = asyncHandler(async (req, res) => {
     }
 });
 
-export const customerRefreshToken = asyncHandler(async (req, res) => {
+// Store Refresh Token
+export const storeRefreshToken = asyncHandler(async (req, res) => {
     const { refreshToken } = req.body;
-    console.log("🚀 ~ req.body:", req.body)
-    if (!refreshToken) {
-        throw new ApiError(400, 'Refresh token required');
+    
+    const store = await Store.findById(req.user?.id);
+    if (!store) {
+        throw new ApiError(404, 'Store not found');
     }
 
-    let decoded;
-    try {
-        decoded = jwt.verify(refreshToken, REFRESH_TOKEN_SECRET);
-    } catch (error) {
-        throw new ApiError(401, 'Invalid or expired refresh token');
-    }
-
-    // Verify the token is for a customer
-    if (decoded.role !== 'customer') {
-        throw new ApiError(403, 'Invalid token for customer');
-    }
-
-    const customer = await Customer.findById(decoded.userId);
-    if (!customer) {
-        throw new ApiError(404, 'Customer not found');
-    }
-
-    // Check if the stored refresh token matches
-    if (customer.refreshToken !== refreshToken) {
-        throw new ApiError(401, 'Refresh token revoked');
-    }
-
-    // Generate new tokens
-    const newAccessToken = generateAccessToken(customer, 'customer');
-    const newRefreshToken = generateRefreshToken(customer, 'customer');
-
-    // Update the refresh token in database
-    customer.refreshToken = newRefreshToken;
-    await customer.save();
+    const { newAccessToken, newRefreshToken } = await refreshTokens(store, 'store', refreshToken);
 
     return res.status(200).json(
         new ApiResponse(
@@ -603,7 +645,7 @@ export const customerRefreshToken = asyncHandler(async (req, res) => {
                 accessToken: newAccessToken,
                 refreshToken: newRefreshToken
             },
-            "Tokens refreshed successfully"
+            "Store tokens refreshed successfully"
         )
     );
 });

@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { verifyJWT, verifyRole } from "../middlewares/auth.middleware.js";
 import { validateRequest } from "../middlewares/validation.middleware.js";
-import { managerSendOtp, managerVerifyLogin } from "../controllers/auth.controller.js";
+import { managerSendOtp, managerVerifyLogin, managerRefreshToken } from "../controllers/auth.controller.js";
 import {
     getManagerProfile,
     updateManagerProfile,
@@ -47,6 +47,9 @@ router.post("/verify-login",
     validateRequest(managerVerifyLoginSchema, 'body'),
     managerVerifyLogin
 );
+
+// Manager refresh token route
+router.post("/refresh-token", managerRefreshToken);
 
 // Protect all subsequent manager routes
 router.use(verifyJWT, verifyRole("manager"));

@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { verifyJWT, verifyRole } from "../middlewares/auth.middleware.js";
-import { deliveryPartnerSendOtp, deliveryPartnerVerifyLogin } from "../controllers/auth.controller.js";
+import { deliveryPartnerSendOtp, deliveryPartnerVerifyLogin, deliveryPartnerRefreshToken } from "../controllers/auth.controller.js";
 import {
     getDeliveryPartnerProfile,
     updateDeliveryPartnerProfile,
@@ -13,9 +13,12 @@ import {
 
 const router = Router()
 
-// Public routes (no authentication required)
+// Delivery Partner authentication routes (OTP-based)
 router.post("/send-otp", deliveryPartnerSendOtp);
 router.post("/verify-login", deliveryPartnerVerifyLogin);
+
+// Delivery Partner refresh token route
+router.post("/refresh-token", deliveryPartnerRefreshToken);
 
 // Protected routes (require authentication)
 router.use(verifyJWT, verifyRole("deliveryPartner"));
