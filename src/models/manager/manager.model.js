@@ -28,20 +28,13 @@ const managerSchema = new mongoose.Schema({
         unique: true,
         trim: true
     },
-    // location: {
-    //     type: String,
-    //     required: true,
-    //     trim: true,
-    //     minlength: 5,
-    //     maxlength: 200
-    // },
-    // userLocation: {
-    //     type: String,
-    //     required: true,
-    //     trim: true,
-    //     minlength: 5,
-    //     maxlength: 200
-    // },
+    location: {
+        type: String,
+        required: true,
+        trim: true,
+        minlength: 5,
+        maxlength: 200
+    },
     storeName: {
         type: String,
         required: true,
@@ -56,13 +49,6 @@ const managerSchema = new mongoose.Schema({
         minlength: 10,
         maxlength: 300
     },
-    // address: {
-    //     type: String,
-    //     required: true,
-    //     trim: true,
-    //     minlength: 10,
-    //     maxlength: 300
-    // },
     lat: {
         type: Number,
         required: true
@@ -71,11 +57,11 @@ const managerSchema = new mongoose.Schema({
         type: Number,
         required: true
     },
-    // store: {
-    //     type: mongoose.Schema.Types.ObjectId,
-    //     ref: "Store",
-    //     required: true
-    // },
+    store: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Store",
+        required: true
+    },
     isActive: {
         type: Boolean,
         default: true
@@ -84,13 +70,18 @@ const managerSchema = new mongoose.Schema({
         type: Date,
         default: Date.now
     }
-}, {
-    timestamps: true
-});
+},
+    {
+        timestamps: true
+    }
+);
 
 // Index for better query performance
-managerSchema.index({ email: 1 });
 managerSchema.index({ phone: 1 });
+managerSchema.index({ email: 1 });
 managerSchema.index({ store: 1 });
+managerSchema.index({ isActive: 1 });
 
-export default mongoose.model("Manager", managerSchema);
+const Manager = mongoose.model("Manager", managerSchema);
+
+export default Manager;

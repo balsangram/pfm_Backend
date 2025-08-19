@@ -2,8 +2,20 @@ import { asyncHandler } from "../../utils/asyncHandler.js";
 import { ApiResponse } from "../../utils/ApiResponse.js";
 import DeliveryPartner from "../../models/deliveryPartner/deliveryPartner.model.js";
 
+// Helper function to check if user has permission
+const hasPermission = (userRole) => {
+    return ['admin', 'manager'].includes(userRole);
+};
+
 // Create new delivery partner
 export const createDeliveryPartner = asyncHandler(async (req, res) => {
+    // Check if user has permission
+    if (!hasPermission(req.user.role)) {
+        return res.status(403).json(
+            new ApiResponse(403, null, "Access denied. Only admins and managers can perform this action")
+        );
+    }
+
     const { name, phone } = req.body;
 
     // Validate required fields
@@ -48,6 +60,13 @@ export const createDeliveryPartner = asyncHandler(async (req, res) => {
 
 // Get all delivery partners with filtering and pagination
 export const getAllDeliveryPartners = asyncHandler(async (req, res) => {
+    // Check if user has permission
+    if (!hasPermission(req.user.role)) {
+        return res.status(403).json(
+            new ApiResponse(403, null, "Access denied. Only admins and managers can perform this action")
+        );
+    }
+
     const { 
         page = 1, 
         limit = 10, 
@@ -92,6 +111,13 @@ export const getAllDeliveryPartners = asyncHandler(async (req, res) => {
 
 // Get delivery partner by ID
 export const getDeliveryPartnerById = asyncHandler(async (req, res) => {
+    // Check if user has permission
+    if (!hasPermission(req.user.role)) {
+        return res.status(403).json(
+            new ApiResponse(403, null, "Access denied. Only admins and managers can perform this action")
+        );
+    }
+
     const { id } = req.params;
 
     const deliveryPartner = await DeliveryPartner.findById(id)
@@ -111,6 +137,13 @@ export const getDeliveryPartnerById = asyncHandler(async (req, res) => {
 
 // Update delivery partner status
 export const updateDeliveryPartnerStatus = asyncHandler(async (req, res) => {
+    // Check if user has permission
+    if (!hasPermission(req.user.role)) {
+        return res.status(403).json(
+            new ApiResponse(403, null, "Access denied. Only admins and managers can perform this action")
+        );
+    }
+
     const { id } = req.params;
     const { status } = req.body;
 
@@ -139,6 +172,13 @@ export const updateDeliveryPartnerStatus = asyncHandler(async (req, res) => {
 
 // Update document verification status
 export const updateDocumentVerificationStatus = asyncHandler(async (req, res) => {
+    // Check if user has permission
+    if (!hasPermission(req.user.role)) {
+        return res.status(403).json(
+            new ApiResponse(403, null, "Access denied. Only admins and managers can perform this action")
+        );
+    }
+
     const { id } = req.params;
     const { documentType, status, notes } = req.body;
 
@@ -190,6 +230,13 @@ export const updateDocumentVerificationStatus = asyncHandler(async (req, res) =>
 
 // Bulk update document verification status
 export const bulkUpdateDocumentVerification = asyncHandler(async (req, res) => {
+    // Check if user has permission
+    if (!hasPermission(req.user.role)) {
+        return res.status(403).json(
+            new ApiResponse(403, null, "Access denied. Only admins and managers can perform this action")
+        );
+    }
+
     const { id } = req.params;
     const { documents } = req.body;
 
@@ -254,6 +301,13 @@ export const bulkUpdateDocumentVerification = asyncHandler(async (req, res) => {
 
 // Delete delivery partner
 export const deleteDeliveryPartner = asyncHandler(async (req, res) => {
+    // Check if user has permission
+    if (!hasPermission(req.user.role)) {
+        return res.status(403).json(
+            new ApiResponse(403, null, "Access denied. Only admins and managers can perform this action")
+        );
+    }
+
     const { id } = req.params;
 
     const deliveryPartner = await DeliveryPartner.findByIdAndDelete(id);
@@ -271,6 +325,13 @@ export const deleteDeliveryPartner = asyncHandler(async (req, res) => {
 
 // Get delivery partner statistics
 export const getDeliveryPartnerStats = asyncHandler(async (req, res) => {
+    // Check if user has permission
+    if (!hasPermission(req.user.role)) {
+        return res.status(403).json(
+            new ApiResponse(403, null, "Access denied. Only admins and managers can perform this action")
+        );
+    }
+
     const stats = await DeliveryPartner.aggregate([
         {
             $group: {
@@ -300,15 +361,3 @@ export const getDeliveryPartnerStats = asyncHandler(async (req, res) => {
         new ApiResponse(200, result, "Statistics retrieved successfully")
     );
 });
-
-// Export the controller object
-export const DeliveryPartnerController = {
-    createDeliveryPartner,
-    getAllDeliveryPartners,
-    getDeliveryPartnerById,
-    updateDeliveryPartnerStatus,
-    updateDocumentVerificationStatus,
-    bulkUpdateDocumentVerification,
-    deleteDeliveryPartner,
-    getDeliveryPartnerStats
-};
