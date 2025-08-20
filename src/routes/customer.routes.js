@@ -38,7 +38,7 @@ router.delete("/remove-from-cart",);
 router.get("/allCategories", customerCategoriesController.allCategories);
 // router.get("/bestSellingProducts", bestSellingProducts);
 
-// router.get("/allCategories-subProducts", allCategoriesSubProducts);
+router.get("/allCategories-subProducts/:id", customerCategoriesController.allCategoriesSubProducts);
 
 router.post("/search-subProducts",);
 
