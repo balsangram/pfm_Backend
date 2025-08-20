@@ -1,12 +1,16 @@
 import { Router } from "express";
 import { verifyJWT, verifyRole } from "../middlewares/auth.middleware.js";
-import { customerRefreshToken, customerSendOtp, customerVerifyLogin } from "../controllers/auth.controller.js";
+import { customerSendOtp, customerVerifyLogin, customerRefreshToken } from "../controllers/auth.controller.js";
+import Customer from "../models/customer/customer.model.js";
+import { ApiResponse } from "../utils/ApiResponse.js";
 
 const router = Router();
 
-// Customer Routes
+// Customer authentication routes (OTP-based)
 router.post("/send-otp", customerSendOtp);
 router.post("/verify-login", customerVerifyLogin);
+
+// Customer refresh token route
 router.post("/refresh-token", customerRefreshToken);
 
 

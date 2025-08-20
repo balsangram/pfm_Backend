@@ -1,19 +1,29 @@
 import { Router } from "express";
 import { verifyJWT, verifyRole } from "../middlewares/auth.middleware.js";
-import { adminLogin } from "../controllers/auth.controller.js";
+import { validateRequest, validateMultiple } from "../middlewares/validation.middleware.js";
+import { adminLogin, adminRefreshToken } from "../controllers/auth.controller.js";
 import { AdminProfileController } from "../controllers/admin/adminProfile.controller.js";
 import { MeatCenterController } from "../controllers/admin/meatCenter.controller.js";
 import { DeliveryPartnerController } from "../controllers/admin/deliveryPartner.controller.js";
 import { SendNotificationController } from "../controllers/admin/sendNotification.controller.js";
 import { ProductCategoryController } from "../controllers/admin/productCategories.controller.js";
 import { upload } from "../middlewares/multer.middleware.js"
-import { validateMultiple, validateRequest } from "../middlewares/validation.middleware.js";
-import { productCategorySchemaAdd, productCategorySchemaEdit, subCategorySchemaEdit, subProductCategorySchemaAdd, typeCategorySchemaAdd, typeCategorySchemaEdit } from "../validations/admin.validation.js";
+import { 
+    createMeatCenterSchema, 
+    updateMeatCenterSchema, 
+    idParamSchema,
+    productCategorySchemaAdd, 
+    productCategorySchemaEdit, 
+    subCategorySchemaEdit 
+} from "../validations/admin.validation.js";
 
 const router = Router();
 
 // Admin login route
 router.post("/login", adminLogin);
+
+// Admin refresh token route
+router.post("/refresh-token", adminRefreshToken);
 
 // Protect all subsequent admin routes
 router.use(verifyJWT, verifyRole("admin"));

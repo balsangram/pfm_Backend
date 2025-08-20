@@ -12,6 +12,18 @@ const customerSchema = new mongoose.Schema({
         type: Number,
         default: 0
     },
+    refreshToken: {
+        type: String,
+        default: null
+    },
+    isActive: {
+        type: Boolean,
+        default: true
+    },
+    lastLogin: {
+        type: Date,
+        default: Date.now
+    },
     notifications: [{
         type: mongoose.Schema.Types.ObjectId,
         ref: "notification"
@@ -23,5 +35,9 @@ const customerSchema = new mongoose.Schema({
 }, {
     timestamps: true
 })
+
+// Index for better query performance
+customerSchema.index({ phone: 1 });
+customerSchema.index({ isActive: 1 });
 
 export default mongoose.model("Customer", customerSchema);
