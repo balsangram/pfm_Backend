@@ -5,8 +5,6 @@ const SubCategorySchema = new mongoose.Schema(
         img: {
             type: String,
             trim: true,
-            // optional: uncomment if image is required
-            // required: [true, "Type category image is required"],
         },
         name: {
             type: String,
@@ -14,11 +12,13 @@ const SubCategorySchema = new mongoose.Schema(
             trim: true,
             minlength: [2, "Name must be at least 2 characters long"],
             maxlength: [100, "Name cannot exceed 100 characters"],
+            index: true, // index for faster search by name
         },
         type: {
             type: String,
             required: [true, "Type is required"],
             trim: true,
+            index: true, // index for filtering by type
         },
         quality: {
             type: String,
@@ -32,14 +32,13 @@ const SubCategorySchema = new mongoose.Schema(
             minlength: [5, "Description must be at least 5 characters long"],
         },
         weight: {
-            type: String, // e.g., "200g", "500ml"
+            type: String,
             required: [true, "Weight is required"],
             trim: true,
         },
         pieces: {
             type: String,
             required: [true, "Pieces is required"],
-            min: [1, "Pieces must be at least 1"],
         },
         serves: {
             type: Number,
@@ -70,9 +69,13 @@ const SubCategorySchema = new mongoose.Schema(
             type: Number,
             required: [true, "Price is required"],
             min: [0, "Price cannot be negative"],
+            index: true, // index for price-based queries
         },
     },
     { timestamps: true }
 );
+
+// Optional compound index if you frequently search/filter by type + price
+SubCategorySchema.index({ type: 1, price: 1 });
 
 export const SubCategory = mongoose.model("SubCategory", SubCategorySchema);

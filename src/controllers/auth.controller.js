@@ -226,8 +226,6 @@ export const customerSendOtp = asyncHandler(async (req, res) => {
         .json(new ApiResponse(200, { userId: customer._id }, "OTP sent successfully"));
 });
 
-
-
 // Customer Verify Login
 export const customerVerifyLogin = asyncHandler(async (req, res) => {
     const { phone, otp, userId } = req.body;
