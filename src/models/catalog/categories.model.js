@@ -1,53 +1,28 @@
 import mongoose from "mongoose";
 
-const subCategoriesSchema = new mongoose.Schema({
-    img: {
-        type: String,
-        // required: true
+// Category schema
+const CategorySchema = new mongoose.Schema(
+    {
+        name: {
+            type: String,
+            required: [true, "Category name is required"],
+            trim: true,
+            unique: true, // prevents duplicate categories
+        },
+        img: {
+            type: String,
+            trim: true,
+            // optional: you can uncomment if image is required
+            // required: [true, "Category image is required"],
+        },
+        typeCategories: [
+            {
+                type: mongoose.Schema.Types.ObjectId,
+                ref: "TypeCategory", // reference to TypeCategory model
+            },
+        ],
     },
-    name: {
-        type: String,
-        required: true
-    },
-    typeof: {
-        type: String,
-        required: true
-    },
-    description: {
-        type: String,
-        required: true
-    },
-    totalEnergy: {
-        type: Number,
-        required: true
-    },
-carbohydrate:{
+    { timestamps: true }
+);
 
-},
-Fat:{
-
-},
-Protein:{
-
-}
-});
-
-const categoriesSchema = new mongoose.Schema({
-    name: {
-        type: String,
-        required: true
-    },
-    img: {
-        type: String,
-        // required: true
-    },
-    subCategories: {
-        type: [subCategoriesSchema], // array of subcategories
-        required: false,             // explicitly optional
-        default: []                  // default empty array if not provided
-    }
-}, {
-    timestamps: true
-});
-
-export default mongoose.model("Categories", categoriesSchema);
+export default mongoose.model("Category", CategorySchema);

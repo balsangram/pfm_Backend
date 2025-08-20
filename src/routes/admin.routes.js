@@ -8,7 +8,7 @@ import { SendNotificationController } from "../controllers/admin/sendNotificatio
 import { ProductCategoryController } from "../controllers/admin/productCategories.controller.js";
 import { upload } from "../middlewares/multer.middleware.js"
 import { validateMultiple, validateRequest } from "../middlewares/validation.middleware.js";
-import { productCategorySchemaAdd, productCategorySchemaEdit, subCategorySchemaEdit } from "../validations/admin.validation.js";
+import { productCategorySchemaAdd, productCategorySchemaEdit, subCategorySchemaEdit, subProductCategorySchemaAdd, typeCategorySchemaAdd, typeCategorySchemaEdit } from "../validations/admin.validation.js";
 
 const router = Router();
 
@@ -46,25 +46,29 @@ router.post("/product-categories", upload.any(), validateRequest(productCategory
 router.patch("/product-categories/:id", upload.any(), validateMultiple(productCategorySchemaEdit), ProductCategoryController.updateProductCategory);
 router.delete("/product-categories/:id", ProductCategoryController.deleteProductCategory);
 
+// Type Category
+router.get("/type-categories/:id", ProductCategoryController.getTypeCategories);
+router.post("/type-categories/:id", upload.any(), validateRequest(typeCategorySchemaAdd), ProductCategoryController.createTypeCategory);
+router.patch("/type-categories/:id", upload.any(), validateMultiple(typeCategorySchemaEdit), ProductCategoryController.updateTypeCategory);
+router.delete("/type-categories/:id/product-categories/:categoryId", ProductCategoryController.deleteTypeCategory);
+
 // Product Categories - Subcategories
 router.get("/sub-product-categories/:id",
     ProductCategoryController.getSubProductCategories);
-
 router.post(
     "/sub-product-categories/:id", upload.any(),
-    validateMultiple(productCategorySchemaAdd),
+    validateMultiple(subProductCategorySchemaAdd),
     ProductCategoryController.createSubProductCategory);
-
 router.patch(
     "/sub-product-categories/:id", upload.any(),
     validateMultiple(subCategorySchemaEdit),
     ProductCategoryController.updateSubProductCategory
 );
-
 router.delete(
-    "/product-categories/:id/sub-product-categories/:subId",
+    "/sub-product-categories/:id/type-categories/:categoryId",
     ProductCategoryController.deleteSubProductCategory
 );
 
+router.get("/sub-product-categories-details/:id", ProductCategoryController.getAllDetailsOfSubCategoriesProduct);
 
 export default router;

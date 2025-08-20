@@ -1,4 +1,6 @@
 import Joi from 'joi';
+import joi from 'joi';
+import mongoose from 'mongoose';
 
 // Meat Center Validation Schemas
 export const createMeatCenterSchema = Joi.object({
@@ -125,8 +127,6 @@ export const idParamSchema = Joi.object({
         })
 });
 
-import joi from 'joi';
-
 
 export const meatCenterSchemaAdd = joi.object({
     firstName: joi.string().min(2).max(50).required(),
@@ -188,9 +188,74 @@ export const productCategorySchemaEdit = joi.object({
 });
 
 
-// Subcategory update validation
-export const subCategorySchemaEdit = joi.object({
-    subId: joi.string()
+export const typeCategorySchemaAdd = Joi.object({
+    name: Joi.string().min(2).max(100).required().messages({
+        "string.empty": `"name" cannot be empty`,
+        "any.required": `"name" is required`
+    }),
+    img: Joi.string().uri().messages({
+        "string.empty": `"img" cannot be empty`,
+        "string.uri": `"img" must be a valid URL`
+    }),
+});
+
+export const typeCategorySchemaEdit = Joi.object({
+    name: Joi.string().min(2).max(100).optional().messages({
+        "string.empty": `"name" cannot be empty`,
+    }),
+    img: Joi.string().uri().optional().messages({
+        "string.empty": `"img" cannot be empty`,
+        "string.uri": `"img" must be a valid URL`
+    })
+});
+
+// Validation schema for adding a subcategory
+
+export const subProductCategorySchemaAdd = Joi.object({
+    images: Joi.array().items(Joi.string().uri()).optional().messages({
+        "array.base": `"images" must be an array`,
+        "string.uri": `"images" must contain valid URLs`
+    }),
+    name: Joi.string().min(2).max(100).required().messages({
+        "string.empty": `"name" cannot be empty`,
+        "any.required": `"name" is required`
+    }),
+    type: Joi.string().required().messages({
+        "string.empty": `"type" cannot be empty`,
+        "any.required": `"type" is required`
+    }),
+    quality: Joi.string().allow("").optional(),
+    description: Joi.string().required().messages({
+        "string.empty": `"description" cannot be empty`,
+        "any.required": `"description" is required`
+    }),
+    weight: Joi.string().required().messages({
+        "string.empty": `"weight" cannot be empty`,
+        "any.required": `"weight" is required`
+    }),
+    pieces: Joi.number().required().messages({
+        "number.base": `"pieces" must be a number`,
+        "any.required": `"pieces" is required`
+    }),
+    serves: Joi.number().required().messages({
+        "number.base": `"serves" must be a number`,
+        "any.required": `"serves" is required`
+    }),
+    totalEnergy: Joi.number().required().messages({
+        "number.base": `"totalEnergy" must be a number`,
+        "any.required": `"totalEnergy" is required`
+    }),
+    carbohydrate: Joi.number().default(0).optional(),
+    fat: Joi.number().default(0).optional(),
+    protein: Joi.number().default(0).optional(),
+    price: Joi.number().required().messages({
+        "number.base": `"price" must be a number`,
+        "any.required": `"price" is required`
+    })
+});
+
+export const subCategorySchemaEdit = Joi.object({
+    subId: Joi.string()
         .required()
         .custom((value, helpers) => {
             if (!mongoose.Types.ObjectId.isValid(value)) {
@@ -202,17 +267,20 @@ export const subCategorySchemaEdit = joi.object({
             "any.invalid": `"subId" must be a valid MongoDB ObjectId`,
             "any.required": `"subId" is required`
         }),
-    name: joi.string()
-        .min(2)
-        .max(100)
-        .messages({
-            "string.base": `"name" should be a type of 'text'`,
-            "string.min": `"name" should have at least {#limit} characters`,
-            "string.max": `"name" should have at most {#limit} characters`
-        }),
-    img: joi.string()
-        .uri()
-        .messages({
-            "string.uri": `"img" must be a valid URL`
-        })
+    images: Joi.array().items(Joi.string().uri()).optional().messages({
+        "array.base": `"images" must be an array`,
+        "string.uri": `"images" must contain valid URLs`
+    }),
+    name: Joi.string().min(2).max(100).optional(),
+    type: Joi.string().optional(),
+    quality: Joi.string().optional(),
+    description: Joi.string().optional(),
+    weight: Joi.string().optional(),
+    pieces: Joi.number().optional(),
+    serves: Joi.number().optional(),
+    totalEnergy: Joi.number().optional(),
+    carbohydrate: Joi.number().optional(),
+    fat: Joi.number().optional(),
+    protein: Joi.number().optional(),
+    price: Joi.number().optional()
 });
