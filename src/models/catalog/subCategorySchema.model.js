@@ -12,13 +12,13 @@ const SubCategorySchema = new mongoose.Schema(
             trim: true,
             minlength: [2, "Name must be at least 2 characters long"],
             maxlength: [100, "Name cannot exceed 100 characters"],
-            index: true, // index for faster search by name
+            index: true,
         },
         type: {
-            type: String,
+            type: [String], // changed from String to array of strings
             required: [true, "Type is required"],
             trim: true,
-            index: true, // index for filtering by type
+            index: true,
         },
         quality: {
             type: String,
@@ -69,7 +69,7 @@ const SubCategorySchema = new mongoose.Schema(
             type: Number,
             required: [true, "Price is required"],
             min: [0, "Price cannot be negative"],
-            index: true, // index for price-based queries
+            index: true,
         },
     },
     { timestamps: true }
@@ -78,4 +78,4 @@ const SubCategorySchema = new mongoose.Schema(
 // Optional compound index if you frequently search/filter by type + price
 SubCategorySchema.index({ type: 1, price: 1 });
 
-export const SubCategory = mongoose.model("SubCategory", SubCategorySchema);
+export default mongoose.model("SubCategory", SubCategorySchema);

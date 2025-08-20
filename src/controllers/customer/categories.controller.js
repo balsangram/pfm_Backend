@@ -1,6 +1,8 @@
 import { ApiResponse } from "../../utils/ApiResponse.js";
 import { asyncHandler } from "../../utils/asyncHandler.js";
 import Categories from "../../models/catalog/categories.model.js"
+import TypeCategory from "../../models/catalog/typeCategories.model.js";
+import SubCategory from "../../models/catalog/subCategorySchema.model.js";
 
 const allCategories = asyncHandler(async (req, res) => {
     // Fetch only name and img
@@ -9,7 +11,6 @@ const allCategories = asyncHandler(async (req, res) => {
         new ApiResponse(200, categories, "Product categories retrieved successfully")
     );
 });
-
 
 const allCategoriesSubProducts = asyncHandler(async (req, res) => {
     console.log("hello");
@@ -42,9 +43,60 @@ const allCategoriesSubProducts = asyncHandler(async (req, res) => {
     );
 });
 
+const categoriesTypes = asyncHandler(async (req, res) => {
+    // Find all categories and populate typeCategories
+    const categories = await Categories.find()
+        .select("name img") // Only select category name and img
+        .populate({
+            path: "typeCategories",
+            select: "name img", // Only select name and img of typeCategories
+        });
 
+    res.status(200).json(
+        new ApiResponse(200, categories, "Categories with types retrieved successfully")
+    );
+});
+
+const typeCategoriesAllCard = asyncHandler(async (req, res) => {
+    const { id } = req.params; // TypeCategory ID
+
+    // Find the TypeCategory by ID and populate subCategories
+    const typeCategory = await TypeCategory.findById(id)
+        .select("name subCategories")
+        .populate({
+            path: "subCategories",
+            select: "name img description weight pieces serves price",
+        });
+
+    if (!typeCategory) {
+        return res.status(404).json(new ApiResponse(404, null, "Type category not found"));
+    }
+
+    res.status(200).json(
+        new ApiResponse(200, typeCategory, "Type category with sub-products retrieved successfully")
+    );
+});
+
+const fullDetailsOfSubCategorieCard = asyncHandler(async (req, res) => {
+    const { id } = req.params; // SubCategory ID
+
+    // Find subcategory by ID
+    const subCategory = await SubCategory.findById(id);
+
+    if (!subCategory) {
+        return res.status(404).json(new ApiResponse(404, null, "Subcategory not found"));
+    }
+
+    // Return full details
+    res.status(200).json(
+        new ApiResponse(200, subCategory, "Subcategory details retrieved successfully")
+    );
+});
 
 export const customerCategoriesController = {
     allCategories,
-    allCategoriesSubProducts
+    allCategoriesSubProducts,
+    categoriesTypes,
+    typeCategoriesAllCard,
+    fullDetailsOfSubCategorieCard,
 };

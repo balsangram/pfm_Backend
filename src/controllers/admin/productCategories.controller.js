@@ -3,7 +3,7 @@ import Categories from "../../models/catalog/categories.model.js"
 import { ApiError } from "../../utils/ApiError.js";
 import { ApiResponse } from "../../utils/ApiResponse.js";
 import { asyncHandler } from "../../utils/asyncHandler.js";
-import { SubCategory } from "../../models/catalog/subCategorySchema.model.js"
+import SubCategory from "../../models/catalog/subCategorySchema.model.js"
 import TypeCategory from "../../models/catalog/typeCategories.model.js";
 
 // categories 
@@ -281,8 +281,8 @@ const getSubProductCategories = asyncHandler(async (req, res) => {
 const createSubProductCategory = asyncHandler(async (req, res) => {
     console.log(req.body, "body");
 
-    const { id } = req.params; // parent category ID
-    const {
+    const { id } = req.params; // parent TypeCategory ID
+    let {
         name,
         images,
         type,
@@ -298,9 +298,13 @@ const createSubProductCategory = asyncHandler(async (req, res) => {
         price
     } = req.body;
 
+    // Ensure type is an array
+    if (!Array.isArray(type)) {
+        type = type ? [type] : []; // convert string to array if needed
+    }
+
     // Check parent category exists
     const parentCategory = await TypeCategory.findById(id);
-    console.log("🚀 ~ parentCategory:", parentCategory)
     if (!parentCategory) {
         throw new ApiError(404, "Parent TypeCategory not found");
     }
@@ -321,11 +325,9 @@ const createSubProductCategory = asyncHandler(async (req, res) => {
         description,
         price: Number(price)
     });
-    console.log("🚀 ~ newSubcategory:", newSubcategory)
 
     // Push subcategory _id to parent category
     parentCategory.subCategories.push(newSubcategory._id);
-    console.log("🚀 ~ parentCategory:", parentCategory)
     await parentCategory.save();
 
     // Return structured response
@@ -334,15 +336,16 @@ const createSubProductCategory = asyncHandler(async (req, res) => {
             id: newSubcategory._id,
             name: newSubcategory.name,
             images: newSubcategory.images,
+            type: newSubcategory.type
         }, "Subcategory added successfully")
     );
 });
 
 const updateSubProductCategory = asyncHandler(async (req, res) => {
-    const { id } = req.params; // direct subcategory id
-    console.log("🚀 ~ subId:", id)
+    const { id } = req.params; // subcategory id
+    console.log("🚀 ~ subId:", id);
 
-    const {
+    let {
         name,
         images,
         type,
@@ -358,8 +361,12 @@ const updateSubProductCategory = asyncHandler(async (req, res) => {
         price
     } = req.body;
 
-    // Update subcategory directly
-    // Update and return only name, img
+    // Ensure type is an array
+    if (!Array.isArray(type)) {
+        type = type ? [type] : [];
+    }
+
+    // Update subcategory
     const updatedSubCategory = await SubCategory.findByIdAndUpdate(
         id,
         {
@@ -377,14 +384,18 @@ const updateSubProductCategory = asyncHandler(async (req, res) => {
             description,
             price
         },
-        { new: true, runValidators: true, select: "name images type quality weight pieces serves totalEnergy carbohydrate fat protein description price" }
+        {
+            new: true,
+            runValidators: true,
+            select: "name images type quality weight pieces serves totalEnergy carbohydrate fat protein description price"
+        }
     );
-    console.log("🚀 ~ updatedSubCategory:", updatedSubCategory)
+
+    console.log("🚀 ~ updatedSubCategory:", updatedSubCategory);
 
     if (!updatedSubCategory) {
         throw new ApiError(404, "Subcategory not found");
     }
-
 
     res.status(200).json(
         new ApiResponse(200, updatedSubCategory, "Subcategory updated successfully")
