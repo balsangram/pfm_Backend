@@ -14,7 +14,8 @@ import {
     idParamSchema,
     productCategorySchemaAdd, 
     productCategorySchemaEdit, 
-    subCategorySchemaEdit 
+    subCategorySchemaEdit, 
+    subProductCategorySchemaAdd
 } from "../validations/admin.validation.js";
 
 const router = Router();
