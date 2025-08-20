@@ -15,7 +15,9 @@ import {
     productCategorySchemaAdd, 
     productCategorySchemaEdit, 
     subCategorySchemaEdit, 
-    subProductCategorySchemaAdd
+    subProductCategorySchemaAdd,
+    typeCategorySchemaAdd,
+    typeCategorySchemaEdit
 } from "../validations/admin.validation.js";
 
 const router = Router();
