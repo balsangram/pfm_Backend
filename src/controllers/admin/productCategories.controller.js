@@ -99,12 +99,24 @@ const deleteProductCategory = asyncHandler(async (req, res) => {
 // type categories
 
 const getTypeCategories = asyncHandler(async (req, res) => {
-    // Fetch only name and img
-    const typeCategories = await Categories.find().select("typeCategories.name typeCategories.img");
+    const { id } = req.params;
+
+    // Find category by ID and populate typeCategories with only name & img
+    const category = await Categories.findById(id).populate({
+        path: "typeCategories",
+        select: "name img", // only fetch name & img
+    });
+
+    if (!category) {
+        return res.status(404).json(
+            new ApiResponse(404, null, "Category not found")
+        );
+    }
+
     res.status(200).json(
-        new ApiResponse(200, typeCategories, "Type categories retrieved successfully")
+        new ApiResponse(200, category.typeCategories, "Type categories retrieved successfully")
     );
-})
+});
 
 const createTypeCategory = asyncHandler(async (req, res) => {
     const { id } = req.params;
@@ -267,6 +279,8 @@ const getSubProductCategories = asyncHandler(async (req, res) => {
 });
 
 const createSubProductCategory = asyncHandler(async (req, res) => {
+    console.log(req.body, "body");
+
     const { id } = req.params; // parent category ID
     const {
         name,
@@ -286,6 +300,7 @@ const createSubProductCategory = asyncHandler(async (req, res) => {
 
     // Check parent category exists
     const parentCategory = await TypeCategory.findById(id);
+    console.log("🚀 ~ parentCategory:", parentCategory)
     if (!parentCategory) {
         throw new ApiError(404, "Parent TypeCategory not found");
     }
@@ -297,7 +312,7 @@ const createSubProductCategory = asyncHandler(async (req, res) => {
         type,
         quality: quality || "",
         weight,
-        pieces: Number(pieces),
+        pieces,
         serves: Number(serves),
         totalEnergy: Number(totalEnergy),
         carbohydrate: carbohydrate ? Number(carbohydrate) : 0,
@@ -306,9 +321,11 @@ const createSubProductCategory = asyncHandler(async (req, res) => {
         description,
         price: Number(price)
     });
+    console.log("🚀 ~ newSubcategory:", newSubcategory)
 
     // Push subcategory _id to parent category
     parentCategory.subCategories.push(newSubcategory._id);
+    console.log("🚀 ~ parentCategory:", parentCategory)
     await parentCategory.save();
 
     // Return structured response

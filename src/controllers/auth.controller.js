@@ -15,6 +15,7 @@ import {
 } from "../config/config.dotenv.js";
 import OTP from "../models/otp.model.js";
 import { ApiError } from "../utils/ApiError.js";
+import mongoose from "mongoose";
 
 // Generate Access Token
 const generateAccessToken = (user, role) => {
@@ -143,7 +144,7 @@ export const adminLogin = asyncHandler(async (req, res) => {
 // Admin Refresh Token
 export const adminRefreshToken = asyncHandler(async (req, res) => {
     const { refreshToken } = req.body;
-    
+
     const admin = await Admin.findById(req.user?.id);
     if (!admin) {
         throw new ApiError(404, 'Admin not found');
@@ -165,35 +166,67 @@ export const adminRefreshToken = asyncHandler(async (req, res) => {
 
 // Customer Send OTP
 export const customerSendOtp = asyncHandler(async (req, res) => {
-    const { phone } = req.body;
-
-    // Check if customer exists
-    let customer = await Customer.findOne({ phone: phone });
-    
-    // If customer doesn't exist, create them automatically
-    if (!customer) {
-        customer = await Customer.create({ 
-            name: `Customer_${phone.slice(-4)}`, // Auto-generate name from last 4 digits
-            phone: phone 
-        });
-        console.log("🚀 ~ New customer auto-created:", customer);
+    const { phone, refId } = req.body;
+ 
+    // Validate phone number
+    if (!phone || phone.length < 10) {
+        return res.status(400).json(new ApiResponse(400, null, "Valid phone number is required"));
     }
 
-    // generate OTP
+    // Validate refId first (if provided)
+    if (refId) {
+        // Validate refId format (should be a valid MongoDB ObjectId)
+        if (!mongoose.Types.ObjectId.isValid(refId)) {
+            return res.status(400).json(new ApiResponse(400, null, "Invalid referral ID format"));
+        }
+
+        // Check if referrer exists
+        const referrer = await Customer.findById(refId);
+        if (!referrer) {
+            return res.status(400).json(new ApiResponse(400, null, "Invalid referral ID - referrer not found"));
+        }
+    }
+    // Check if customer exists
+    let customer = await Customer.findOne({ phone });
+
+    if (!customer) {
+        // New customer creation with welcome bonus
+        customer = await Customer.create({
+            name: `Customer_${phone.slice(-4)}`,
+            phone,
+            wallet: 50 // Welcome bonus for new user
+        });
+        console.log("🚀 ~ New customer created with ₹50 wallet:", customer);
+
+        // Apply referral bonus if refId is provided
+        if (refId) {
+            const referrer = await Customer.findById(refId);
+            if (referrer) {
+                referrer.wallet += 50; // Referral bonus for referrer
+                await referrer.save();
+                console.log(`🚀 ~ Referral bonus applied to referrer: ${referrer._id}`);
+            }
+        }
+    }
+
+    // Generate OTP
     const otpCode = generateOtp();
-    // save OTP in DB (with expiry e.g. 5 mins)
+
+    // Save OTP in DB (with expiry)
     const otpDoc = new OTP({
         userId: customer._id,
-        phone: phone,
+        phone,
         otp: otpCode,
     });
-    console.log("🚀 ~ otpDoc:", otpDoc)
     await otpDoc.save();
+    console.log("🚀 ~ otpDoc:", otpDoc);
 
     return res
         .status(200)
         .json(new ApiResponse(200, { userId: customer._id }, "OTP sent successfully"));
 });
+
+
 
 // Customer Verify Login
 export const customerVerifyLogin = asyncHandler(async (req, res) => {
@@ -215,7 +248,7 @@ export const customerVerifyLogin = asyncHandler(async (req, res) => {
             .status(401)
             .json(new ApiResponse(401, null, "Invalid phone number, OTP, or userId"));
     }
-    
+
     // Delete OTP only if it exists in DB
     if (otpDoc) {
         await OTP.deleteOne({ _id: otpDoc._id });
@@ -260,7 +293,7 @@ export const customerVerifyLogin = asyncHandler(async (req, res) => {
 // Customer Refresh Token
 export const customerRefreshToken = asyncHandler(async (req, res) => {
     const { refreshToken } = req.body;
-    
+
     if (!refreshToken) {
         throw new ApiError(400, 'Refresh token required');
     }
@@ -404,7 +437,7 @@ export const deliveryPartnerVerifyLogin = asyncHandler(async (req, res) => {
 // Delivery Partner Refresh Token
 export const deliveryPartnerRefreshToken = asyncHandler(async (req, res) => {
     const { refreshToken } = req.body;
-    
+
     if (!refreshToken) {
         throw new ApiError(400, 'Refresh token required');
     }
@@ -499,7 +532,7 @@ export const managerVerifyLogin = asyncHandler(async (req, res) => {
             .status(401)
             .json(new ApiResponse(401, null, "Invalid phone number or OTP"));
     }
-    
+
     // Delete OTP only if it exists in DB
     if (otpDoc) {
         await OTP.deleteOne({ _id: otpDoc._id });
@@ -544,7 +577,7 @@ export const managerVerifyLogin = asyncHandler(async (req, res) => {
 // Manager Refresh Token
 export const managerRefreshToken = asyncHandler(async (req, res) => {
     const { refreshToken } = req.body;
-    
+
     if (!refreshToken) {
         throw new ApiError(400, 'Refresh token required');
     }
@@ -684,7 +717,7 @@ export const storeVerifyLogin = asyncHandler(async (req, res) => {
 // Store Refresh Token
 export const storeRefreshToken = asyncHandler(async (req, res) => {
     const { refreshToken } = req.body;
-    
+
     if (!refreshToken) {
         throw new ApiError(400, 'Refresh token required');
     }

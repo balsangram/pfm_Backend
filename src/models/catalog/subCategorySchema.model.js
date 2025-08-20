@@ -37,7 +37,7 @@ const SubCategorySchema = new mongoose.Schema(
             trim: true,
         },
         pieces: {
-            type: Number,
+            type: String,
             required: [true, "Pieces is required"],
             min: [1, "Pieces must be at least 1"],
         },
