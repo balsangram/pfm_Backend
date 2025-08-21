@@ -8,17 +8,19 @@ import { DeliveryPartnerController } from "../controllers/admin/deliveryPartner.
 import { SendNotificationController } from "../controllers/admin/sendNotification.controller.js";
 import { ProductCategoryController } from "../controllers/admin/productCategories.controller.js";
 import { upload } from "../middlewares/multer.middleware.js"
-import { 
-    createMeatCenterSchema, 
-    updateMeatCenterSchema, 
+import {
+    createMeatCenterSchema,
+    updateMeatCenterSchema,
     idParamSchema,
-    productCategorySchemaAdd, 
-    productCategorySchemaEdit, 
-    subCategorySchemaEdit, 
+    productCategorySchemaAdd,
+    productCategorySchemaEdit,
+    subCategorySchemaEdit,
     subProductCategorySchemaAdd,
     typeCategorySchemaAdd,
     typeCategorySchemaEdit
 } from "../validations/admin.validation.js";
+import { couponsController } from "../controllers/admin/coupons.controller.js";
+import { contactUsController } from "../controllers/admin/contactUS.controller.js";
 
 const router = Router();
 
@@ -83,5 +85,23 @@ router.delete(
 );
 
 router.get("/sub-product-categories-details/:id", ProductCategoryController.getAllDetailsOfSubCategoriesProduct);
+
+// coupons 
+
+router.get("/coupons", couponsController.displayCoupons)
+router.post("/coupons", couponsController.addCoupons)
+router.patch("/coupons/:id", couponsController.editCoupons)
+router.delete("/coupons/:id", couponsController.deleteCoupons)
+
+// contactUs
+
+// Get all contact entries
+router.get("/contact-us", contactUsController.getAllContacts);
+// Add a new contact entry
+router.post("/contact-us", contactUsController.addContact);
+// Update a contact entry by ID
+router.patch("/contact-us/:id", contactUsController.updateContact);
+// Delete a contact entry by ID
+router.delete("/contact-us/:id", contactUsController.deleteContact);
 
 export default router;

@@ -3,32 +3,33 @@ import mongoose from "mongoose";
 // Subschema for order items
 const orderItemSchema = new mongoose.Schema(
     {
-        name: { 
-            type: String, 
+        name: {
+            type: String,
             required: true,
             trim: true
         },
-        quantity: { 
-            type: Number, 
-            required: true, 
-            min: 1 
+        quantity: {
+            type: Number,
+            required: true,
+            min: 1
         },
-        price: { 
-            type: Number, 
-            required: true, 
-            min: 0 
+        price: {
+            type: Number,
+            required: true,
+            min: 0
         },
     },
-    { _id: false }
+    { _id: true } // keep _id to reference individual items
 );
 
+// Main Order Schema
 const orderSchema = new mongoose.Schema({
-    orderId: {
-        type: String,
-        required: true,
-        unique: true,
-        trim: true
+    customer: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Customer',
+        required: true
     },
+
     clientName: {
         type: String,
         required: true,
@@ -42,6 +43,17 @@ const orderSchema = new mongoose.Schema({
         trim: true,
         minlength: 5,
         maxlength: 200
+    },
+    geoLocation: {
+        type: {
+            type: String,
+            enum: ['Point'],
+            default: 'Point'
+        },
+        coordinates: {
+            type: [Number], // [longitude, latitude]
+            required: true
+        }
     },
     orderDetails: [orderItemSchema],
     phone: {
@@ -60,9 +72,8 @@ const orderSchema = new mongoose.Schema({
         default: 'pending'
     },
     pickedUpBy: {
-        type: String,
-        trim: true,
-        maxlength: 100
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'DeliveryPartner'
     },
     deliveryPartner: {
         type: mongoose.Schema.Types.ObjectId,
@@ -83,26 +94,26 @@ const orderSchema = new mongoose.Schema({
         maxlength: 500,
         trim: true
     },
+    isUrgent: {
+        type: Boolean,
+        default: false
+    },
     estimatedDeliveryTime: {
         type: Date
     },
     actualDeliveryTime: {
         type: Date
-    },
-    isUrgent: {
-        type: Boolean,
-        default: false
     }
 }, {
     timestamps: true
 });
 
-// Index for better query performance
-orderSchema.index({ orderId: 1 });
+// Indexes
 orderSchema.index({ status: 1 });
 orderSchema.index({ store: 1 });
 orderSchema.index({ manager: 1 });
+orderSchema.index({ geoLocation: "2dsphere" }); // geospatial index
 orderSchema.index({ createdAt: -1 });
-orderSchema.index({ clientName: 'text', location: 'text' });
+orderSchema.index({ clientName: 'text', location: 'text' }); // text index
 
 export default mongoose.model("Order", orderSchema);

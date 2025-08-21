@@ -2,6 +2,9 @@ import { Router } from "express";
 import { verifyJWT, verifyRole } from "../middlewares/auth.middleware.js";
 import { customerSendOtp, customerVerifyLogin, customerRefreshToken } from "../controllers/auth.controller.js";
 import { customerCategoriesController } from "../controllers/customer/categories.controller.js";
+import { customerCartController } from "../controllers/customer/customerCart.controller.js";
+import { customerProfileController } from "../controllers/customer/customerProfile.controller.js";
+import { customerCouponsController } from "../controllers/customer/coupons.controller.js";
 
 const router = Router();
 
@@ -17,22 +20,37 @@ router.post("/refresh-token", customerRefreshToken);
 router.use(verifyJWT, verifyRole("customer"));
 
 // profile 
-router.get("/profile",);
-router.patch("/update-profile",);
-router.delete("/delete-account",);
-router.post("/logout",);
-router.get("/address",);
+router.get("/profile/:userId", customerProfileController.customerProfile);
+router.patch("/update-profile/:userId", customerProfileController.updateProfile);
+router.delete("/delete-account/:userId", customerProfileController.deleteCustomer);
+router.post("/logout/:userId", customerProfileController.customerLogout);
+router.get("/contact-us", customerProfileController.getContacts);
+
+router.get("/address/:userId", customerProfileController.displayAddress);
+router.post("/address/:userId", customerProfileController.addAddress);
+router.patch("/address/:userId/:addressId", customerProfileController.editAddress);
+router.delete("/address/:userId/:addressId", customerProfileController.deleteAddress);
+
 router.get("/orders",);
 router.post("/cancel-order",);
-router.get("/wallet",);
+
+router.get("/wallet/:userId", customerCouponsController.displayWalletPoint);
+
+router.get("/coupons/:userId", customerCouponsController.displayCoupons);
+router.post("/use-coupons/:userId/:couponId", customerCouponsController.addCouponToUser);
+
 router.get("/notifications",);
-router.get("/contact-us",);
-router.delete("/delete-account",);
 
 // cart 
-router.get("/cart",);
-router.post("/add-to-cart",);
-router.delete("/remove-from-cart",);
+router.get("/cart/:userId", customerCartController.displayCartDetails);         // View cart
+router.post("/cart/:userId", customerCartController.addToCart);                 // Add item
+router.patch("/cart/:userId/item/:itemId", customerCartController.editToCart);  // Update qty
+router.delete("/cart/:userId/item/:itemId", customerCartController.deleteToCart); // Remove item
+
+//order related
+router.get("/order-history/:userId", customerCartController.orderHistory);
+router.post("/create-order/:userId", customerCartController.createOrder);
+router.get("/cancel-order/:userId", customerCartController.cancelOrder);
 
 // wishlist
 // 1. display all categories cards ===
