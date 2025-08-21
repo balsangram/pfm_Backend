@@ -177,3 +177,91 @@ export const getAllDeliveryPartnersQueryValidation = Joi.object({
             'string.max': 'Search query cannot exceed 100 characters'
         })
 });
+
+// Delivery partner QR flow validations
+export const scanQrValidation = Joi.object({
+    code: Joi.string()
+        .max(200)
+        .required()
+        .messages({
+            'any.required': 'QR code payload is required'
+        })
+});
+
+export const respondOrderValidation = Joi.object({
+    orderId: Joi.string()
+        .pattern(/^[0-9a-fA-F]{24}$/)
+        .required()
+        .messages({
+            'string.pattern.base': 'Invalid order ID format',
+            'any.required': 'Order ID is required'
+        }),
+    action: Joi.string()
+        .valid('accept', 'reject')
+        .required()
+        .messages({
+            'any.only': 'Action must be either accept or reject',
+            'any.required': 'Action is required'
+        })
+});
+
+// Initiate delivery validation
+export const initiateDeliveryValidation = Joi.object({
+    orderId: Joi.string()
+        .pattern(/^[0-9a-fA-F]{24}$/)
+        .required()
+        .messages({
+            'string.pattern.base': 'Invalid order ID format',
+            'any.required': 'Order ID is required'
+        })
+});
+
+// Mark order delivered validation
+export const markDeliveredValidation = Joi.object({
+    orderId: Joi.string()
+        .pattern(/^[0-9a-fA-F]{24}$/)
+        .required()
+        .messages({
+            'string.pattern.base': 'Invalid order ID format',
+            'any.required': 'Order ID is required'
+        })
+});
+
+// Reject delivery validation
+export const rejectDeliveryValidation = Joi.object({
+    orderId: Joi.string()
+        .pattern(/^[0-9a-fA-F]{24}$/)
+        .required()
+        .messages({
+            'string.pattern.base': 'Invalid order ID format',
+            'any.required': 'Order ID is required'
+        }),
+    reason: Joi.string()
+        .valid('customer_not_available', 'wrong_address', 'payment_issue', 'order_cancelled', 'other')
+        .required()
+        .messages({
+            'any.only': 'Invalid rejection reason',
+            'any.required': 'Rejection reason is required'
+        }),
+    notes: Joi.string()
+        .max(500)
+        .optional()
+        .messages({
+            'string.max': 'Notes cannot exceed 500 characters'
+        })
+});
+
+// Edit profile validation
+export const editProfileValidation = Joi.object({
+    name: Joi.string()
+        .min(2)
+        .max(100)
+        .trim()
+        .required()
+        .messages({
+            'string.min': 'Name must be at least 2 characters long',
+            'string.max': 'Name cannot exceed 100 characters',
+            'string.trim': 'Name cannot contain leading or trailing spaces',
+            'any.required': 'Name is required'
+        })
+});

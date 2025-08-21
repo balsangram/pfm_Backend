@@ -23,6 +23,11 @@ import {
     getUrgentOrders,
     getOrderCounts
 } from "../controllers/manager/liveOrders.controller.js";
+// Add shared delivery partner management handlers for document verification
+import {
+    updateDocumentVerificationStatus,
+    bulkUpdateDocumentVerification
+} from "../controllers/shared/deliveryPartnerManagement.controller.js";
 import {
     managerSendOtpSchema,
     managerVerifyLoginSchema,
@@ -35,6 +40,11 @@ import {
     updateStoreSchema,
     idParamSchema
 } from "../validations/manager.validation.js";
+// Import validation for document verification payloads
+import {
+    documentVerificationValidation,
+    bulkDocumentVerificationValidation
+} from "../validations/deliveryPartner.validation.js";
 
 const router = Router();
 
@@ -109,6 +119,18 @@ router.patch("/delivery-partners/:id",
 router.delete("/delivery-partners/:id", 
     validateRequest(idParamSchema, 'params'),
     deleteDeliveryPartner
+);
+
+// Document Verification Management (Manager/Admin)
+router.patch("/delivery-partners/:id/documents",
+    validateRequest(idParamSchema, 'params'),
+    validateRequest(documentVerificationValidation, 'body'),
+    updateDocumentVerificationStatus
+);
+router.patch("/delivery-partners/:id/documents/bulk",
+    validateRequest(idParamSchema, 'params'),
+    validateRequest(bulkDocumentVerificationValidation, 'body'),
+    bulkUpdateDocumentVerification
 );
 
 // Store Management
