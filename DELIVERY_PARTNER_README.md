@@ -73,6 +73,84 @@ This design allows managers to handle day-to-day operations while admins maintai
 - `PUT /api/delivery-partners/last-active` - Update last active status
 - `GET /api/delivery-partners/orders` - Get assigned orders
 
+#### QR Scan Flow
+- `POST /api/delivery-partners/scan-qr` - Send scanned QR payload and receive order details
+  - Body: `{ code: string }` where `code` is either the Mongo Order ID or a JSON string like `{ "orderId": "<id>" }`
+  - Response: order summary with items and status; only orders in `ready | picked_up | in_transit` are allowed
+- `POST /api/delivery-partners/respond-order` - Respond to scanned order with accept or reject
+  - Body: `{ orderId: string, action: 'accept' | 'reject' }`
+  - Response on accept: `{ accepted: true, orderId, customerLat, customerLong }`
+  - Response on reject: `{ rejected: true }`
+
+#### Complete Delivery Flow
+- `POST /api/delivery-partners/initiate-delivery` - Start delivery navigation
+  - Body: `{ orderId: string }`
+  - Response: `{ orderId, estimatedDeliveryTime, customerLat, customerLong }`
+  - Sets estimated delivery time to 1 hour from pickup
+
+- `POST /api/delivery-partners/mark-delivered` - Mark order as successfully delivered
+  - Body: `{ orderId: string }`
+  - Response: `{ orderId, deliveredAt }`
+  - Updates delivery partner statistics
+
+- `POST /api/delivery-partners/reject-delivery` - Reject delivery with reason
+  - Body: `{ orderId: string, reason: string, notes?: string }`
+  - Reason options: `customer_not_available`, `wrong_address`, `payment_issue`, `order_cancelled`, `other`
+  - Response: `{ orderId, rejectedAt, reason }`
+
+#### Order Management
+- `GET /api/delivery-partners/ongoing-orders` - Get orders picked up but not delivered
+  - Response: Array of ongoing orders with estimated delivery times
+- `GET /api/delivery-partners/completed-orders` - Get successfully delivered orders
+  - Response: Array of completed orders with delivery timestamps
+
+#### Profile Section
+- `GET /api/delivery-partners/profile/info` - Get comprehensive profile information
+  - Response: Complete profile with order statistics (total, completed, ongoing)
+- `GET /api/delivery-partners/profile/stats` - Get performance statistics
+  - Response: Delivery stats, success rate, rating, days active
+- `GET /api/delivery-partners/contact-us` - Get store manager contact for "Contact Us"
+  - Response: Store and manager details (name, phone, location)
+- `PATCH /api/delivery-partners/profile/edit` - Edit delivery partner name
+  - Body: `{ "name": "New Name" }`
+  - Response: Updated profile information
+- `DELETE /api/delivery-partners/profile` - Delete delivery partner account
+  - Note: Cannot delete if there are ongoing deliveries
+  - Response: Account deletion confirmation
+
+### Profile Section Features
+
+#### Contact Us
+- Fetches store manager's phone number from most recent order
+- Used by frontend to open phone call log with manager's number
+- Returns store name, phone, location and manager details
+
+#### Profile Information
+- Basic profile details (name, phone, status)
+- Document verification status
+- Order statistics (total, completed, ongoing)
+- Performance metrics
+
+#### Account Management
+- Edit profile details
+- View delivery statistics
+- Delete account (with safety checks)
+- Logout functionality
+
+#### Document Status
+- View verification status of all documents
+- Check overall document verification status
+- See admin/manager verification notes
+
+#### Delivery Status Flow
+1. **QR Scan** → Order Details (Accept/Reject)
+2. **Accept** → Order Address (Initiate Delivery/Call Customer)
+3. **Initiate Delivery** → Google Maps Navigation + 1 hour ETA
+4. **Delivery Complete** → Order Delivered/Not Delivered/Call Customer
+5. **Order Delivered** → Moves to Completed Orders
+6. **Not Delivered** → Reason Selection → Order Rejected
+7. **Ongoing Orders** → Shows orders in transit with ETAs
+
 ### Admin Routes (Admin Only)
 
 #### Partner Management
@@ -349,3 +427,395 @@ All endpoints use consistent error handling with:
 - Mobile app integration
 - Real-time status updates via WebSocket
 - Role-based permission customization
+
+## Complete API Testing Guide
+
+### Base Configuration
+- **Base URL**: `http://localhost:8000`
+- **Headers**: `Authorization: Bearer <delivery_partner_token>`, `Content-Type: application/json`
+
+### 1. Authentication Flow
+
+#### Send OTP
+```
+POST /deliveryPartner/send-otp
+{
+  "phone": "9999999998"
+}
+```
+
+#### Verify Login
+```
+POST /deliveryPartner/verify-login
+{
+  "phone": "9999999998",
+  "otp": "2025",
+  "userId": "<delivery_partner_id>"
+}
+```
+
+### 2. Complete Delivery Flow Testing
+
+#### Step 1: Scan QR Code
+```
+POST /deliveryPartner/scan-qr
+{
+  "code": "<order_id_from_database>"
+}
+```
+
+#### Step 2: Accept Order
+```
+POST /deliveryPartner/respond-order
+{
+  "orderId": "<order_id>",
+  "action": "accept"
+}
+```
+
+#### Step 3: Initiate Delivery
+```
+POST /deliveryPartner/initiate-delivery
+{
+  "orderId": "<order_id>"
+}
+```
+
+#### Step 4: Mark as Delivered
+```
+POST /deliveryPartner/mark-delivered
+{
+  "orderId": "<order_id>"
+}
+```
+
+### 3. Alternative Flow: Reject Delivery
+
+#### Reject with Reason
+```
+POST /deliveryPartner/reject-delivery
+{
+  "orderId": "<order_id>",
+  "reason": "customer_not_available",
+  "notes": "Customer not responding to calls"
+}
+```
+
+### 4. Order Management
+
+#### Get Ongoing Orders
+```
+GET /deliveryPartner/ongoing-orders
+```
+
+#### Get Completed Orders
+```
+GET /deliveryPartner/completed-orders
+```
+
+### Expected Responses
+
+#### Successful QR Scan
+```json
+{
+  "statusCode": 200,
+  "data": {
+    "id": "68a5b222e4e3dc004bd9aaa8",
+    "orderId": "ORD-001",
+    "clientName": "John Doe",
+    "phone": "9876543223",
+    "amount": 299,
+    "location": "123 Main St, City",
+    "customerLat": 12.9716,
+    "customerLong": 77.5946,
+    "items": [...],
+    "status": "ready"
+  },
+  "message": "Order retrieved from QR"
+}
+```
+
+#### Order Accepted
+```json
+{
+  "statusCode": 200,
+  "data": {
+    "accepted": true,
+    "orderId": "68a5b222e4e3dc004bd9aaa8",
+    "customerLat": 12.9716,
+    "customerLong": 77.5946
+  },
+  "message": "Order accepted by delivery partner"
+}
+```
+
+#### Delivery Initiated
+```json
+{
+  "statusCode": 200,
+  "data": {
+    "orderId": "68a5b222e4e3dc004bd9aaa8",
+    "estimatedDeliveryTime": "2025-08-20T11:50:00.000Z",
+    "customerLat": 12.9716,
+    "customerLong": 77.5946
+  },
+  "message": "Delivery initiated successfully"
+}
+```
+
+#### Order Delivered
+```json
+{
+  "statusCode": 200,
+  "data": {
+    "orderId": "68a5b222e4e3dc004bd9aaa8",
+    "deliveredAt": "2025-08-20T11:45:00.000Z"
+  },
+  "message": "Order marked as delivered successfully"
+}
+```
+
+### Testing Checklist
+
+- [ ] Create test order in database with status "ready"
+- [ ] Login as delivery partner and get access token
+- [ ] Test QR scan with valid order ID
+- [ ] Test order acceptance
+- [ ] Test delivery initiation (should set 1-hour ETA)
+- [ ] Test marking order as delivered
+- [ ] Test order rejection with valid reason
+- [ ] Verify ongoing orders endpoint
+- [ ] Verify completed orders endpoint
+- [ ] Test error cases (invalid order ID, unauthorized access, etc.)
+
+### Profile Section Testing
+
+- [ ] Test get profile info endpoint
+- [ ] Test get profile stats endpoint
+- [ ] Test contact us endpoint (should return store manager phone)
+- [ ] Test delete account endpoint (with and without ongoing orders)
+- [ ] Verify all profile data is returned correctly
+
+### Complete API Testing Guide
+
+#### Base Configuration
+- **Base URL**: `http://localhost:8000`
+- **Headers**: `Authorization: Bearer <delivery_partner_token>`, `Content-Type: application/json`
+
+#### 1. Authentication Flow
+
+##### Send OTP
+```
+POST /deliveryPartner/send-otp
+{
+  "phone": "9999999992"
+}
+```
+
+##### Verify Login (Get Token)
+```
+POST /deliveryPartner/verify-login
+{
+  "phone": "9999999992",
+  "otp": "2025",
+  "userId": "<delivery_partner_id>"
+}
+```
+
+#### 2. Profile Section Testing
+
+##### Get Profile Information
+```
+GET /deliveryPartner/profile/info
+Headers: Authorization: Bearer <token>
+```
+
+**Expected Response:**
+```json
+{
+  "statusCode": 200,
+  "data": {
+    "name": "Test Driver",
+    "phone": "9999999992",
+    "status": "verified",
+    "documentStatus": {...},
+    "orderStats": {
+      "total": 5,
+      "completed": 3,
+      "ongoing": 1
+    }
+  },
+  "message": "Profile information retrieved successfully"
+}
+```
+
+##### Get Profile Statistics
+```
+GET /deliveryPartner/profile/stats
+Headers: Authorization: Bearer <token>
+```
+
+**Expected Response:**
+```json
+{
+  "statusCode": 200,
+  "data": {
+    "totalDeliveries": 15,
+    "totalAccepted": 20,
+    "totalRejected": 2,
+    "rating": 4.5,
+    "successRate": "75.00%",
+    "averageRating": "4.5",
+    "daysActive": 30
+  },
+  "message": "Profile statistics retrieved successfully"
+}
+```
+
+##### Contact Us (Get Store Manager Phone)
+```
+GET /deliveryPartner/contact-us
+Headers: Authorization: Bearer <token>
+```
+
+**Expected Response:**
+```json
+{
+  "statusCode": 200,
+  "data": {
+    "store": {
+      "name": "Fresh Meat Center",
+      "phone": "9876543210",
+      "location": "JP Nagar, Bangalore"
+    },
+    "manager": {
+      "name": "John Manager",
+      "phone": "9876543211"
+    }
+  },
+  "message": "Store manager contact information retrieved successfully"
+}
+```
+
+##### Delete Account
+```
+DELETE /deliveryPartner/profile
+Headers: Authorization: Bearer <token>
+```
+
+**Expected Response:**
+```json
+{
+  "statusCode": 200,
+  "data": null,
+  "message": "Account deleted successfully"
+}
+```
+
+**Error Response (if ongoing orders):**
+```json
+{
+  "statusCode": 400,
+  "data": null,
+  "message": "Cannot delete account while having ongoing deliveries"
+}
+```
+
+#### 3. Complete Delivery Flow Testing
+
+##### Step 1: Scan QR Code
+```
+POST /deliveryPartner/scan-qr
+Headers: Authorization: Bearer <token>
+{
+  "code": "<order_id_from_database>"
+}
+```
+
+##### Step 2: Accept Order
+```
+POST /deliveryPartner/respond-order
+Headers: Authorization: Bearer <token>
+{
+  "orderId": "<order_id>",
+  "action": "accept"
+}
+```
+
+##### Step 3: Initiate Delivery
+```
+POST /deliveryPartner/initiate-delivery
+Headers: Authorization: Bearer <token>
+{
+  "orderId": "<order_id>"
+}
+```
+
+##### Step 4: Mark as Delivered
+```
+POST /deliveryPartner/mark-delivered
+Headers: Authorization: Bearer <token>
+{
+  "orderId": "<order_id>"
+}
+```
+
+#### 4. Order Management Testing
+
+##### Get Ongoing Orders
+```
+GET /deliveryPartner/ongoing-orders
+Headers: Authorization: Bearer <token>
+```
+
+##### Get Completed Orders
+```
+GET /deliveryPartner/completed-orders
+Headers: Authorization: Bearer <token>
+```
+
+##### Get All Assigned Orders
+```
+GET /deliveryPartner/orders
+Headers: Authorization: Bearer <token>
+```
+
+### Testing Order in Postman:
+
+1. **Start with authentication** (steps 1-2)
+2. **Test profile endpoints** (profile info, stats, contact us)
+3. **Test QR scan** with your order ID
+4. **Accept the order**
+5. **Initiate delivery**
+6. **Check ongoing orders**
+7. **Mark as delivered**
+8. **Check completed orders**
+9. **Test delete account** (should fail if orders exist)
+
+**Remember**: Use the `accessToken` from step 2 in all subsequent requests as `Authorization: Bearer <token>` header!
+
+### Common Error Responses
+
+#### Order Not Available
+```json
+{
+  "statusCode": 400,
+  "message": "Order not available for pickup"
+}
+```
+
+#### Order Already Assigned
+```json
+{
+  "statusCode": 409,
+  "message": "Order already assigned"
+}
+```
+
+#### Unauthorized Access
+```json
+{
+  "statusCode": 401,
+  "message": "Missing Authorization header"
+}
+```

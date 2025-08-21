@@ -10,7 +10,7 @@ const hasPermission = (userRole) => {
 // Create new delivery partner
 export const createDeliveryPartner = asyncHandler(async (req, res) => {
     // Check if user has permission
-    if (!hasPermission(req.user.role)) {
+    if (!hasPermission(req.userRole)) {
         return res.status(403).json(
             new ApiResponse(403, null, "Access denied. Only admins and managers can perform this action")
         );
@@ -61,7 +61,7 @@ export const createDeliveryPartner = asyncHandler(async (req, res) => {
 // Get all delivery partners with filtering and pagination
 export const getAllDeliveryPartners = asyncHandler(async (req, res) => {
     // Check if user has permission
-    if (!hasPermission(req.user.role)) {
+    if (!hasPermission(req.userRole)) {
         return res.status(403).json(
             new ApiResponse(403, null, "Access denied. Only admins and managers can perform this action")
         );
@@ -112,7 +112,7 @@ export const getAllDeliveryPartners = asyncHandler(async (req, res) => {
 // Get delivery partner by ID
 export const getDeliveryPartnerById = asyncHandler(async (req, res) => {
     // Check if user has permission
-    if (!hasPermission(req.user.role)) {
+    if (!hasPermission(req.userRole)) {
         return res.status(403).json(
             new ApiResponse(403, null, "Access denied. Only admins and managers can perform this action")
         );
@@ -136,9 +136,9 @@ export const getDeliveryPartnerById = asyncHandler(async (req, res) => {
 });
 
 // Update delivery partner status
-export const updateDeliveryPartnerStatus = asyncHandler(async (req, res) => {
+export const updateDeliveryPartnerStatus = async (req, res) => {
     // Check if user has permission
-    if (!hasPermission(req.user.role)) {
+    if (!hasPermission(req.userRole)) {
         return res.status(403).json(
             new ApiResponse(403, null, "Access denied. Only admins and managers can perform this action")
         );
@@ -147,9 +147,9 @@ export const updateDeliveryPartnerStatus = asyncHandler(async (req, res) => {
     const { id } = req.params;
     const { status } = req.body;
 
-    if (!status || !['verified', 'pending'].includes(status)) {
+    if (!['verified', 'pending'].includes(status)) {
         return res.status(400).json(
-            new ApiResponse(400, null, "Valid status (verified/pending) is required")
+            new ApiResponse(400, null, "Invalid status. Allowed values are 'verified' or 'pending'")
         );
     }
 
@@ -168,12 +168,12 @@ export const updateDeliveryPartnerStatus = asyncHandler(async (req, res) => {
     return res.status(200).json(
         new ApiResponse(200, deliveryPartner, "Delivery partner status updated successfully")
     );
-});
+};
 
 // Update document verification status
 export const updateDocumentVerificationStatus = asyncHandler(async (req, res) => {
     // Check if user has permission
-    if (!hasPermission(req.user.role)) {
+    if (!hasPermission(req.userRole)) {
         return res.status(403).json(
             new ApiResponse(403, null, "Access denied. Only admins and managers can perform this action")
         );
@@ -231,7 +231,7 @@ export const updateDocumentVerificationStatus = asyncHandler(async (req, res) =>
 // Bulk update document verification status
 export const bulkUpdateDocumentVerification = asyncHandler(async (req, res) => {
     // Check if user has permission
-    if (!hasPermission(req.user.role)) {
+    if (!hasPermission(req.userRole)) {
         return res.status(403).json(
             new ApiResponse(403, null, "Access denied. Only admins and managers can perform this action")
         );
@@ -302,7 +302,7 @@ export const bulkUpdateDocumentVerification = asyncHandler(async (req, res) => {
 // Delete delivery partner
 export const deleteDeliveryPartner = asyncHandler(async (req, res) => {
     // Check if user has permission
-    if (!hasPermission(req.user.role)) {
+    if (!hasPermission(req.userRole)) {
         return res.status(403).json(
             new ApiResponse(403, null, "Access denied. Only admins and managers can perform this action")
         );
@@ -326,7 +326,7 @@ export const deleteDeliveryPartner = asyncHandler(async (req, res) => {
 // Get delivery partner statistics
 export const getDeliveryPartnerStats = asyncHandler(async (req, res) => {
     // Check if user has permission
-    if (!hasPermission(req.user.role)) {
+    if (!hasPermission(req.userRole)) {
         return res.status(403).json(
             new ApiResponse(403, null, "Access denied. Only admins and managers can perform this action")
         );

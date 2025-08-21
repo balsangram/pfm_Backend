@@ -103,6 +103,10 @@ const orderSchema = new mongoose.Schema({
     },
     actualDeliveryTime: {
         type: Date
+    },
+    isUrgent: {
+        type: Boolean,
+        default: false
     }
 }, {
     timestamps: true
