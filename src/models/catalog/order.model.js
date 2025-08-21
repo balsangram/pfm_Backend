@@ -107,6 +107,31 @@ const orderSchema = new mongoose.Schema({
     isUrgent: {
         type: Boolean,
         default: false
+    },
+    // Delivery tracking fields
+    deliveryStatus: {
+        type: String,
+        enum: ['pending', 'accepted', 'picked_up', 'in_transit', 'delivered', 'rejected'],
+        default: 'pending'
+    },
+    estimatedDeliveryTime: {
+        type: Date
+    },
+    actualDeliveryTime: {
+        type: Date
+    },
+    deliveryRejectionReason: {
+        type: String,
+        enum: ['customer_not_available', 'wrong_address', 'payment_issue', 'order_cancelled', 'other'],
+        default: null
+    },
+    deliveryRejectionNotes: {
+        type: String,
+        maxlength: 500,
+        trim: true
+    },
+    pickedUpAt: {
+        type: Date
     }
 }, {
     timestamps: true
