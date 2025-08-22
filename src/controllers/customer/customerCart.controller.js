@@ -167,9 +167,22 @@ const deleteToCart = asyncHandler(async (req, res) => {
 
 // order
 
-const orderHistory = asyncHandler(async (req, res) => {
+// 🟢 Get Order History
+export const orderHistory = asyncHandler(async (req, res) => {
+    const { userId } = req.params;
 
-})
+    if (!userId || !mongoose.Types.ObjectId.isValid(userId)) {
+        throw new ApiError(400, "Invalid customer ID");
+    }
+
+    const orders = await Order.find({ customer: userId })
+        .populate("store manager deliveryPartner", "name email phone") // optional: populate refs
+        .sort({ createdAt: -1 }); // latest first
+
+    return res
+        .status(200)
+        .json(new ApiResponse(200, orders, "Order history fetched successfully"));
+});
 
 // const createOrder = asyncHandler(async (req, res) => {
 //     console.log("🚀 ~ req.params:", req.params)
@@ -405,10 +418,39 @@ const createOrder = asyncHandler(async (req, res) => {
         .json(new ApiResponse(201, { order: newOrder, nearestStore }, "Order created successfully"));
 });
 
-
+// controller
 const cancelOrder = asyncHandler(async (req, res) => {
+    const { userId, orderId } = req.params;
 
-})
+    // Validate IDs
+    if (!mongoose.Types.ObjectId.isValid(userId) || !mongoose.Types.ObjectId.isValid(orderId)) {
+        return res.status(400).json({ message: "Invalid userId or orderId" });
+    }
+
+    // Find the order for the user (customer field, not userId)
+    const order = await Order.findOne({ _id: orderId, customer: userId });
+    if (!order) {
+        return res.status(404).json({ message: "Order not found" });
+    }
+
+    // Check if already cancelled or delivered
+    if (order.status === "cancelled") {
+        return res.status(400).json({ message: "Order already cancelled" });
+    }
+    if (order.status === "delivered") {
+        return res.status(400).json({ message: "Delivered order cannot be cancelled" });
+    }
+
+    // Update status
+    order.status = "cancelled";
+    await order.save();
+
+    res.status(200).json({
+        message: "Order cancelled successfully",
+        order
+    });
+});
+
 
 export const customerCartController = {
     displayCartDetails,

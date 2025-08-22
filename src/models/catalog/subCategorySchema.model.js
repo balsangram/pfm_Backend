@@ -1,3 +1,4 @@
+
 import mongoose from "mongoose";
 
 const SubCategorySchema = new mongoose.Schema(
@@ -70,6 +71,10 @@ const SubCategorySchema = new mongoose.Schema(
             required: [true, "Price is required"],
             min: [0, "Price cannot be negative"],
             index: true,
+        },
+        bestSellers: {
+            type: Boolean,
+            default: false
         },
     },
     { timestamps: true }

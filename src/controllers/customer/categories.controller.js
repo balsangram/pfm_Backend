@@ -12,6 +12,17 @@ const allCategories = asyncHandler(async (req, res) => {
     );
 });
 
+const bestSellingProducts = asyncHandler(async (req, res) => {
+    // Fetch all subcategories where bestSellers is true
+    const bestSellers = await SubCategory.find({ bestSellers: true }).sort({ createdAt: -1 }); // newest first
+
+    if (!bestSellers || bestSellers.length === 0) {
+        return res.status(404).json({ message: "No best-selling products found" });
+    }
+
+    res.status(200).json(bestSellers);
+});
+
 const allCategoriesSubProducts = asyncHandler(async (req, res) => {
     console.log("hello");
 
@@ -109,6 +120,9 @@ const searchItem = asyncHandler(async (req, res) => {
 
 export const customerCategoriesController = {
     allCategories,
+
+    bestSellingProducts,
+
     allCategoriesSubProducts,
     categoriesTypes,
     typeCategoriesAllCard,

@@ -47,14 +47,14 @@ router.delete("/cart/:userId/item/:itemId", customerCartController.deleteToCart)
 //order related
 router.get("/order-history/:userId", customerCartController.orderHistory);
 router.post("/create-order/:userId", customerCartController.createOrder);
-router.get("/cancel-order/:userId", customerCartController.cancelOrder);
+router.delete("/cancel-order/:userId/:orderId", customerCartController.cancelOrder);
 
 // wishlist
 // 1. display all categories cards ===
 router.get("/allCategories", customerCategoriesController.allCategories);
 
 // 2. display all bestSelling products ===
-// router.get("/bestSellingProducts", bestSellingProducts);
+router.get("/bestSellingProducts", customerCategoriesController.bestSellingProducts);
 
 // 3. in category under how many sub category cards are here all display
 router.get("/allCategories-subProducts/:id", customerCategoriesController.allCategoriesSubProducts);
