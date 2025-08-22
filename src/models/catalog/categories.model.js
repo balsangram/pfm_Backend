@@ -7,7 +7,7 @@ const CategorySchema = new mongoose.Schema(
             type: String,
             required: [true, "Category name is required"],
             trim: true,
-            unique: true, // prevents duplicate categories
+            // unique: true, // prevents duplicate categories
             index: true,  // creates an index to speed up searches
         },
         img: {

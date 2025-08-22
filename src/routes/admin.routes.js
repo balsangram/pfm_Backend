@@ -20,7 +20,10 @@ import {
     typeCategorySchemaEdit
 } from "../validations/admin.validation.js";
 import { couponsController } from "../controllers/admin/coupons.controller.js";
+// import { contactUsController } from "../controllers/admin/contactUs.controller.js";
 import { contactUsController } from "../controllers/admin/contactUs.controller.js";
+// import { contactUsController } from "../controllers/admin/contactUS.controller.js";
+
 // import { contactUsController } from "../controllers/admin/contactUS.controller.js";
 
 const router = Router();

@@ -7,7 +7,7 @@ const TypeCategorySchema = new mongoose.Schema(
             type: String,
             required: [true, "Type category name is required"],
             trim: true,
-            unique: true, // prevents duplicates
+            // unique: true, // prevents duplicates
             index: true,  // creates an index for faster search
         },
         img: {
