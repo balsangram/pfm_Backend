@@ -8,6 +8,9 @@ const managerSchema = new mongoose.Schema({
         minlength: 2,
         maxlength: 50
     },
+    img: {
+        require: String,
+    },
     lastName: {
         type: String,
         required: true,

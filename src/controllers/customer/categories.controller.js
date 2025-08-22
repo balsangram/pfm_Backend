@@ -93,10 +93,25 @@ const fullDetailsOfSubCategorieCard = asyncHandler(async (req, res) => {
     );
 });
 
+// Controller
+const searchItem = asyncHandler(async (req, res) => {
+    const { name } = req.query; // ?name=...
+
+    if (!name) {
+        throw new ApiError(400, "Item name is required");
+    }
+
+    const items = await SubCategory.find({ name: { $regex: name, $options: "i" } });
+
+    return res.status(200).json(new ApiResponse(200, items, "Items fetched successfully"));
+});
+
+
 export const customerCategoriesController = {
     allCategories,
     allCategoriesSubProducts,
     categoriesTypes,
     typeCategoriesAllCard,
     fullDetailsOfSubCategorieCard,
+    searchItem
 };

@@ -31,9 +31,6 @@ router.post("/address/:userId", customerProfileController.addAddress);
 router.patch("/address/:userId/:addressId", customerProfileController.editAddress);
 router.delete("/address/:userId/:addressId", customerProfileController.deleteAddress);
 
-router.get("/orders",);
-router.post("/cancel-order",);
-
 router.get("/wallet/:userId", customerCouponsController.displayWalletPoint);
 
 router.get("/coupons/:userId", customerCouponsController.displayCoupons);
@@ -71,6 +68,6 @@ router.get("/type-categories-all-card/:id", customerCategoriesController.typeCat
 // 6. display full details of sub categorie card 
 router.get("/full-details-of-sub-categorie-card/:id", customerCategoriesController.fullDetailsOfSubCategorieCard)
 
-router.post("/search-subProducts",);
+router.post("/search-item", customerCategoriesController.searchItem);
 
 export default router;
