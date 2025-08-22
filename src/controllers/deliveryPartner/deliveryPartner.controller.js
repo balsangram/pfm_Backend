@@ -5,7 +5,7 @@ import Order from "../../models/catalog/order.model.js";
 
 // Get delivery partner profile
 export const getDeliveryPartnerProfile = asyncHandler(async (req, res) => {
-    const deliveryPartnerId = req.user.id;
+    const deliveryPartnerId = req.user._id;
 
     const deliveryPartner = await DeliveryPartner.findById(deliveryPartnerId)
         .select('-__v')
@@ -24,7 +24,7 @@ export const getDeliveryPartnerProfile = asyncHandler(async (req, res) => {
 
 // Update delivery partner profile
 export const updateDeliveryPartnerProfile = asyncHandler(async (req, res) => {
-    const deliveryPartnerId = req.user.id;
+    const deliveryPartnerId = req.user._id;
     const { name, phone } = req.body;
 
     // Validate input
@@ -64,7 +64,7 @@ export const updateDeliveryPartnerProfile = asyncHandler(async (req, res) => {
 
 // Get document verification status
 export const getDocumentStatus = asyncHandler(async (req, res) => {
-    const deliveryPartnerId = req.user.id;
+    const deliveryPartnerId = req.user._id;
 
     const deliveryPartner = await DeliveryPartner.findById(deliveryPartnerId)
         .select('documentStatus overallDocumentStatus verificationNotes status');
@@ -87,7 +87,7 @@ export const getDocumentStatus = asyncHandler(async (req, res) => {
 
 // Upload document for verification (placeholder - you'll need to implement file upload)
 export const uploadDocument = asyncHandler(async (req, res) => {
-    const deliveryPartnerId = req.user.id;
+    const deliveryPartnerId = req.user._id;
     const { documentType, documentUrl } = req.body;
 
     if (!documentType || !documentUrl) {
@@ -116,7 +116,7 @@ export const uploadDocument = asyncHandler(async (req, res) => {
 
 // Get delivery statistics
 export const getDeliveryStatistics = asyncHandler(async (req, res) => {
-    const deliveryPartnerId = req.user.id;
+    const deliveryPartnerId = req.user._id;
 
     const deliveryPartner = await DeliveryPartner.findById(deliveryPartnerId)
         .select('totalDeliveries totalAccepted totalRejected rating lastActive');
@@ -134,7 +134,7 @@ export const getDeliveryStatistics = asyncHandler(async (req, res) => {
 
 // Update last active status
 export const updateLastActive = asyncHandler(async (req, res) => {
-    const deliveryPartnerId = req.user.id;
+    const deliveryPartnerId = req.user._id;
 
     await DeliveryPartner.findByIdAndUpdate(
         deliveryPartnerId,
@@ -148,11 +148,11 @@ export const updateLastActive = asyncHandler(async (req, res) => {
 
 // Get assigned orders
 export const getAssignedOrders = asyncHandler(async (req, res) => {
-    const deliveryPartnerId = req.user.id;
+    const deliveryPartnerId = req.user._id;
 
     // Query orders directly to ensure latest data
     const orders = await Order.find({ deliveryPartner: deliveryPartnerId })
-        .select('orderId status amount location customerLat customerLong estimatedDeliveryTime actualDeliveryTime createdAt')
+        .select('_id status amount location customerLat customerLong estimatedDeliveryTime actualDeliveryTime createdAt')
         .sort({ createdAt: -1 });
 
     return res.status(200).json(
@@ -166,6 +166,7 @@ export const getAssignedOrders = asyncHandler(async (req, res) => {
 // 2) JSON string like {"orderId":"<mongoId>"}
 export const scanOrderQr = asyncHandler(async (req, res) => {
     const { code } = req.body;
+    const deliveryPartnerId = req.user._id; // Use _id instead of id
 
     let resolvedOrderId = null;
     try {
@@ -190,85 +191,106 @@ export const scanOrderQr = asyncHandler(async (req, res) => {
         return res.status(404).json(new ApiResponse(404, null, "Order not found"));
     }
 
-    // Only orders that are ready to be picked or beyond certain statuses should be scannable.
-    if (!['ready', 'picked_up', 'in_transit'].includes(order.status)) {
-        return res.status(400).json(new ApiResponse(400, null, "Order not available for pickup"));
+    // Only orders that are ready should be scannable
+    if (order.status !== 'ready') {
+        return res.status(400).json(new ApiResponse(400, null, "Order is not ready for pickup. Current status: " + order.status));
+    }
+
+    // Check if order is already assigned to another delivery partner
+    if (order.deliveryPartner && order.deliveryPartner._id.toString() !== deliveryPartnerId.toString()) {
+        return res.status(409).json(new ApiResponse(409, null, "Order is already assigned to another delivery partner"));
     }
 
     return res.status(200).json(new ApiResponse(200, {
         id: order._id,
-        orderId: order.orderId,
+        orderId: order._id, // Use _id since orderId field doesn't exist
         clientName: order.clientName,
         phone: order.phone,
         amount: order.amount,
         location: order.location,
-        customerLat: order.customerLat,
-        customerLong: order.customerLong,
+        pincode: order.pincode,
         items: order.orderDetails,
-        status: order.status
+        status: order.status,
+        store: order.store,
+        notes: order.notes,
+        isUrgent: order.isUrgent
     }, "Order retrieved from QR"));
 });
 
 // Delivery partner responds to an order after scanning
 export const respondToOrder = asyncHandler(async (req, res) => {
-    const deliveryPartnerId = req.user.id;
+    const deliveryPartnerId = req.user._id; // Use _id instead of id
     const { orderId, action } = req.body;
 
-    const existing = await Order.findById(orderId).select('status deliveryPartner');
+    // Validate order exists and is in correct status
+    const existing = await Order.findById(orderId).select('status deliveryPartner pickedUpBy');
     if (!existing) {
         return res.status(404).json(new ApiResponse(404, null, "Order not found"));
     }
 
-    if (!['ready', 'picked_up', 'in_transit'].includes(existing.status)) {
-        return res.status(400).json(new ApiResponse(400, null, "Order not available for response"));
+    if (existing.status !== 'ready') {
+        return res.status(400).json(new ApiResponse(400, null, "Order is not ready for pickup. Current status: " + existing.status));
     }
 
     if (action === 'reject') {
-        await DeliveryPartner.findByIdAndUpdate(deliveryPartnerId, { $inc: { totalRejected: 1 } });
+        // Update delivery partner stats
+        await DeliveryPartner.findByIdAndUpdate(deliveryPartnerId, { 
+            $inc: { totalRejected: 1 } 
+        });
         return res.status(200).json(new ApiResponse(200, { rejected: true }, "Order rejected by delivery partner"));
     }
 
-    // Accept path - atomic update to prevent race conditions
-    const updated = await Order.findOneAndUpdate(
-        {
-            _id: orderId,
-            status: { $in: ['ready', 'picked_up', 'in_transit'] },
-            $or: [
-                { deliveryPartner: null },
-                { deliveryPartner: deliveryPartnerId }
-            ]
-        },
-        {
-            $set: {
-                deliveryPartner: deliveryPartnerId,
-                pickedUpBy: 'deliveryPartner',
-                status: 'picked_up',
-                deliveryStatus: 'accepted' // Add this line
-            }
-        },
-        { new: true }
-    );
+    if (action === 'accept') {
+        // Check if order is already assigned to another delivery partner
+        if (existing.deliveryPartner && existing.deliveryPartner.toString() !== deliveryPartnerId.toString()) {
+            return res.status(409).json(new ApiResponse(409, null, "Order is already assigned to another delivery partner"));
+        }
 
-    if (!updated) {
-        return res.status(409).json(new ApiResponse(409, null, "Order already assigned"));
+        // Accept the order - atomic update to prevent race conditions
+        const updated = await Order.findOneAndUpdate(
+            {
+                _id: orderId,
+                status: 'ready',
+                $or: [
+                    { deliveryPartner: null },
+                    { deliveryPartner: deliveryPartnerId }
+                ]
+            },
+            {
+                $set: {
+                    deliveryPartner: deliveryPartnerId,
+                    pickedUpBy: deliveryPartnerId, // Set the actual delivery partner ID
+                    status: 'picked_up',
+                    deliveryStatus: 'accepted',
+                    pickedUpAt: new Date() // Record pickup timestamp
+                }
+            },
+            { new: true, runValidators: true }
+        );
+
+        if (!updated) {
+            return res.status(409).json(new ApiResponse(409, null, "Order already assigned or status changed"));
+        }
+
+        // Update delivery partner stats and assigned orders
+        await DeliveryPartner.findByIdAndUpdate(deliveryPartnerId, {
+            $addToSet: { assignedOrders: updated._id },
+            $inc: { totalAccepted: 1 }
+        });
+
+            return res.status(200).json(new ApiResponse(200, {
+        accepted: true,
+        order: updated,
+        message: "Order accepted successfully"
+    }, "Order accepted and assigned to delivery partner"));
     }
 
-    await DeliveryPartner.findByIdAndUpdate(deliveryPartnerId, {
-        $addToSet: { assignedOrders: updated._id },
-        $inc: { totalAccepted: 1 }
-    });
-
-    return res.status(200).json(new ApiResponse(200, {
-        accepted: true,
-        orderId: updated._id,
-        customerLat: updated.customerLat,
-        customerLong: updated.customerLong
-    }, "Order accepted by delivery partner"));
+    return res.status(400).json(new ApiResponse(400, null, "Invalid action. Must be 'accept' or 'reject'"));
 });
 
 // Initiate delivery - called when delivery partner starts navigation
 export const initiateDelivery = asyncHandler(async (req, res) => {
-    const deliveryPartnerId = req.user.id;
+    const deliveryPartnerId = req.user._id;
     const { orderId } = req.body;
 
     const order = await Order.findOne({
@@ -298,7 +320,7 @@ export const initiateDelivery = asyncHandler(async (req, res) => {
 
 // Mark order as delivered
 export const markOrderDelivered = asyncHandler(async (req, res) => {
-    const deliveryPartnerId = req.user.id;
+    const deliveryPartnerId = req.user._id;
     const { orderId } = req.body;
 
     const order = await Order.findOne({
@@ -329,7 +351,7 @@ export const markOrderDelivered = asyncHandler(async (req, res) => {
 
 // Reject delivery with reason
 export const rejectDelivery = asyncHandler(async (req, res) => {
-    const deliveryPartnerId = req.user.id;
+    const deliveryPartnerId = req.user._id;
     const { orderId, reason, notes } = req.body;
 
     const order = await Order.findOne({
@@ -361,31 +383,31 @@ export const rejectDelivery = asyncHandler(async (req, res) => {
 
 // Get ongoing orders (picked up but not delivered)
 export const getOngoingOrders = asyncHandler(async (req, res) => {
-    const deliveryPartnerId = req.user.id;
+    const deliveryPartnerId = req.user._id;
 
     const ongoingOrders = await Order.find({
         deliveryPartner: deliveryPartnerId,
         status: { $in: ['picked_up', 'in_transit'] }
-    }).select('orderId clientName location orderDetails amount estimatedDeliveryTime createdAt');
+    }).select('_id clientName location orderDetails amount estimatedDeliveryTime createdAt');
 
     return res.status(200).json(new ApiResponse(200, ongoingOrders, "Ongoing orders retrieved successfully"));
 });
 
 // Get completed orders (delivered)
 export const getCompletedOrders = asyncHandler(async (req, res) => {
-    const deliveryPartnerId = req.user.id;
+    const deliveryPartnerId = req.user._id;
 
     const completedOrders = await Order.find({
         deliveryPartner: deliveryPartnerId,
         status: 'delivered'
-    }).select('orderId clientName location orderDetails amount actualDeliveryTime');
+    }).select('_id clientName location orderDetails amount actualDeliveryTime');
 
     return res.status(200).json(new ApiResponse(200, completedOrders, "Completed orders retrieved successfully"));
 });
 
 // Get store manager contact info for "Contact Us"
 export const getStoreManagerContact = asyncHandler(async (req, res) => {
-    const deliveryPartnerId = req.user.id;
+    const deliveryPartnerId = req.user._id;
 
     // Find the delivery partner to get their assigned orders
     const deliveryPartner = await DeliveryPartner.findById(deliveryPartnerId);
@@ -418,7 +440,7 @@ export const getStoreManagerContact = asyncHandler(async (req, res) => {
 
 // Get comprehensive profile information
 export const getProfileInfo = asyncHandler(async (req, res) => {
-    const deliveryPartnerId = req.user.id;
+    const deliveryPartnerId = req.user._id;
 
     const deliveryPartner = await DeliveryPartner.findById(deliveryPartnerId)
         .select('-__v -refreshToken');
@@ -452,7 +474,7 @@ export const getProfileInfo = asyncHandler(async (req, res) => {
 
 // Delete delivery partner account
 export const deleteAccount = asyncHandler(async (req, res) => {
-    const deliveryPartnerId = req.user.id;
+    const deliveryPartnerId = req.user._id;
 
     // Check if there are any ongoing orders
     const ongoingOrders = await Order.countDocuments({
@@ -478,7 +500,7 @@ export const deleteAccount = asyncHandler(async (req, res) => {
 
 // Get delivery partner statistics and performance
 export const getProfileStats = asyncHandler(async (req, res) => {
-    const deliveryPartnerId = req.user.id;
+    const deliveryPartnerId = req.user._id;
 
     const deliveryPartner = await DeliveryPartner.findById(deliveryPartnerId)
         .select('totalDeliveries totalAccepted totalRejected rating lastActive createdAt');
@@ -504,7 +526,7 @@ export const getProfileStats = asyncHandler(async (req, res) => {
 
 // Edit delivery partner profile (name)
 export const editProfile = asyncHandler(async (req, res) => {
-    const deliveryPartnerId = req.user.id;
+    const deliveryPartnerId = req.user._id;
     const { name } = req.body;
 
     // Validate input

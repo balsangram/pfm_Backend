@@ -9,7 +9,7 @@ import bcrypt from 'bcrypt';
 
 // Manager Profile Management
 export const getManagerProfile = asyncHandler(async (req, res) => {
-    const managerId = req.user.id;
+    const managerId = req.user._id;
     
     const manager = await Manager.findById(managerId)
         .select('-__v')
@@ -25,7 +25,7 @@ export const getManagerProfile = asyncHandler(async (req, res) => {
 });
 
 export const updateManagerProfile = asyncHandler(async (req, res) => {
-    const managerId = req.user.id;
+    const managerId = req.user._id;
     const updateData = req.body;
     
     // Remove sensitive fields that shouldn't be updated via this endpoint
@@ -48,7 +48,7 @@ export const updateManagerProfile = asyncHandler(async (req, res) => {
 });
 
 export const changeManagerPassword = asyncHandler(async (req, res) => {
-    const managerId = req.user.id;
+    const managerId = req.user._id;
     const { currentPassword, newPassword } = req.body;
     
     const manager = await Manager.findById(managerId);
@@ -74,7 +74,7 @@ export const changeManagerPassword = asyncHandler(async (req, res) => {
 
 // Order Management
 export const getOrders = asyncHandler(async (req, res) => {
-    const managerId = req.user.id;
+    const managerId = req.user._id;
     const {
         status,
         dateFrom,
@@ -100,9 +100,13 @@ export const getOrders = asyncHandler(async (req, res) => {
     if (search) {
         filter.$or = [
             { clientName: { $regex: search, $options: 'i' } },
-            { location: { $regex: search, $options: 'i' } },
-            { orderId: { $regex: search, $options: 'i' } }
+            { location: { $regex: search, $options: 'i' } }
         ];
+        
+        // If search looks like a valid ObjectId, also search by _id
+        if (search && /^[0-9a-fA-F]{24}$/.test(search)) {
+            filter.$or.push({ _id: search });
+        }
     }
     
     // Calculate pagination
@@ -135,7 +139,7 @@ export const getOrders = asyncHandler(async (req, res) => {
 
 export const getOrderById = asyncHandler(async (req, res) => {
     const { id } = req.params;
-    const managerId = req.user.id;
+    const managerId = req.user._id;
     
     const order = await Order.findOne({ _id: id, manager: managerId })
         .populate('deliveryPartner', 'name phone')
@@ -153,7 +157,7 @@ export const getOrderById = asyncHandler(async (req, res) => {
 
 export const updateOrderStatus = asyncHandler(async (req, res) => {
     const { id } = req.params;
-    const managerId = req.user.id;
+    const managerId = req.user._id;
     const { status, pickedUpBy, notes } = req.body;
     
     const order = await Order.findOne({ _id: id, manager: managerId });
@@ -184,7 +188,7 @@ export const updateOrderStatus = asyncHandler(async (req, res) => {
 
 // Delivery Partner Management
 export const getDeliveryPartners = asyncHandler(async (req, res) => {
-    const managerId = req.user.id;
+    const managerId = req.user._id;
     const { status, search, page = 1, limit = 10 } = req.query;
     
     // Build filter object
@@ -298,7 +302,7 @@ export const deleteDeliveryPartner = asyncHandler(async (req, res) => {
 
 // Store Management
 export const getStoreDetails = asyncHandler(async (req, res) => {
-    const managerId = req.user.id;
+    const managerId = req.user._id;
     
     const manager = await Manager.findById(managerId).populate('store');
     if (!manager || !manager.store) {
@@ -311,7 +315,7 @@ export const getStoreDetails = asyncHandler(async (req, res) => {
 });
 
 export const updateStoreDetails = asyncHandler(async (req, res) => {
-    const managerId = req.user.id;
+    const managerId = req.user._id;
     const updateData = req.body;
     
     const manager = await Manager.findById(managerId);
@@ -332,7 +336,7 @@ export const updateStoreDetails = asyncHandler(async (req, res) => {
 
 // Dashboard Statistics
 export const getDashboardStats = asyncHandler(async (req, res) => {
-    const managerId = req.user.id;
+    const managerId = req.user._id;
     
     // Get today's date range
     const today = new Date();
@@ -368,7 +372,7 @@ export const getDashboardStats = asyncHandler(async (req, res) => {
     const recentOrders = await Order.find({ manager: managerId })
         .sort({ createdAt: -1 })
         .limit(5)
-        .select('orderId clientName status amount createdAt');
+        .select('_id clientName status amount pincode createdAt');
     
     const stats = {
         orders: {

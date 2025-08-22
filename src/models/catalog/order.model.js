@@ -109,21 +109,11 @@ const orderSchema = new mongoose.Schema({
     actualDeliveryTime: {
         type: Date
     },
-    isUrgent: {
-        type: Boolean,
-        default: false
-    },
     // Delivery tracking fields
     deliveryStatus: {
         type: String,
         enum: ['pending', 'accepted', 'picked_up', 'in_transit', 'delivered', 'rejected'],
         default: 'pending'
-    },
-    estimatedDeliveryTime: {
-        type: Date
-    },
-    actualDeliveryTime: {
-        type: Date
     },
     deliveryRejectionReason: {
         type: String,
@@ -137,6 +127,15 @@ const orderSchema = new mongoose.Schema({
     },
     pickedUpAt: {
         type: Date
+    },
+    // Additional fields for delivery partner functionality
+    customerLat: {
+        type: Number,
+        required: false
+    },
+    customerLong: {
+        type: Number,
+        required: false
     }
 }, {
     timestamps: true
