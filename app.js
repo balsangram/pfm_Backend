@@ -23,22 +23,22 @@ app.get('/', (req, res) => {
     res.send('Server is running! 22-08-2025 3.36pm');
 });
 
-import axios from "axios";
+// import axios from "axios";
 
-const callDemoApi = async () => {
-  try {
-    const response = await axios.get(`https://pfm-backend-1gdg.onrender.com`);
-    console.log("🚀 API Response:", response.data);
-  } catch (error) {
-    console.error("❌ API Error:", error.message);
-  } finally {
-    // Schedule next call after 2 minutes
-    setTimeout(callDemoApi, 120000);
-  }
-};
+// const callDemoApi = async () => {
+//   try {
+//     const response = await axios.get(`https://pfm-backend-1gdg.onrender.com`);
+//     console.log("🚀 API Response:", response.data);
+//   } catch (error) {
+//     console.error("❌ API Error:", error.message);
+//   } finally {
+//     // Schedule next call after 2 minutes
+//     setTimeout(callDemoApi, 120000);
+//   }
+// };
 
-// 👉 Start the loop
-callDemoApi();
+// // 👉 Start the loop
+// callDemoApi();
 
 
 app.get('/api/example', (req, res) => {
