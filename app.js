@@ -13,10 +13,10 @@ app.use(express.json());
 app.use(cookieParser())
 
 // Add request logging middleware
-app.use((req, res, next) => {
-    console.log(`📥 ${req.method} ${req.path} - ${new Date().toISOString()}`);
-    next();
-});
+// app.use((req, res, next) => {
+//     console.log(`📥 ${req.method} ${req.path} - ${new Date().toISOString()}`);
+//     next();
+// });
 
 // Example route
 app.get('/', (req, res) => {
