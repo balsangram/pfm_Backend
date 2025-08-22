@@ -21,7 +21,8 @@ import {
     getLiveOrders,
     getOrdersByStatus,
     getUrgentOrders,
-    getOrderCounts
+    getOrderCounts,
+    testEndpoint
 } from "../controllers/manager/liveOrders.controller.js";
 // Add shared delivery partner management handlers for document verification
 import {
@@ -47,6 +48,12 @@ import {
 } from "../validations/deliveryPartner.validation.js";
 
 const router = Router();
+
+// Simple test route (no authentication required)
+router.get("/ping", (req, res) => {
+    console.log('🏓 Ping endpoint hit!');
+    res.json({ message: 'Manager routes working!', timestamp: new Date().toISOString() });
+});
 
 // Manager authentication routes (OTP-based)
 router.post("/send-otp", 
@@ -86,6 +93,9 @@ router.get("/live-orders/status/:status",
 );
 router.get("/live-orders/urgent", getUrgentOrders);
 router.get("/live-orders/counts", getOrderCounts);
+
+// Test endpoint (no authentication required)
+router.get("/test", testEndpoint);
 
 // Order Management
 router.get("/orders", 

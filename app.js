@@ -12,9 +12,15 @@ app.use(cors());
 app.use(express.json());
 app.use(cookieParser())
 
+// Add request logging middleware
+app.use((req, res, next) => {
+    console.log(`📥 ${req.method} ${req.path} - ${new Date().toISOString()}`);
+    next();
+});
+
 // Example route
 app.get('/', (req, res) => {
-    res.send('Server is running! 22-08-2025');
+    res.send('Server is running! 22-08-2025 3.36pm');
 });
 
 import axios from "axios";
