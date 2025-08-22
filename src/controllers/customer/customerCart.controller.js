@@ -362,6 +362,7 @@ const createOrder = asyncHandler(async (req, res) => {
 
     // 4️⃣ First match stores by pincode
     let candidateStores = await Store.find({ isActive: true, pincode });
+    console.log("🚀 ~ candidateStores:", candidateStores)
     if (!candidateStores.length) {
         // fallback → get all active stores
         candidateStores = await Store.find({ isActive: true });

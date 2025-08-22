@@ -17,16 +17,16 @@ export const getMeatCenters = asyncHandler(async (req, res) => {
 
 // Create a new meat center with manager
 export const createMeatCenter = asyncHandler(async (req, res) => {
-    const { 
-        storeName, 
-        location, 
-        managerPhone, 
-        managerFirstName, 
-        managerLastName, 
+    const {
+        storeName,
+        location,
+        managerPhone,
+        managerFirstName,
+        managerLastName,
         managerEmail,
-        latitude, 
+        latitude,
         longitude,
-        products 
+        products
     } = req.body;
 
     // Check if manager with this phone already exists
@@ -90,7 +90,7 @@ export const updateMeatCenter = asyncHandler(async (req, res) => {
         { $set: updateData },
         { new: true, runValidators: true }
     ).populate('manager', 'firstName lastName phone email')
-    .select('-__v');
+        .select('-__v');
 
     if (!store) {
         throw new ApiError(404, "Meat center not found");
