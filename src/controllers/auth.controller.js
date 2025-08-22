@@ -122,6 +122,21 @@ export const adminLogin = asyncHandler(async (req, res) => {
         admin.refreshToken = refreshToken;
         await admin.save();
 
+        // Set tokens in cookies
+        res.cookie("adminAccessToken", accessToken, {
+            httpOnly: true,        // prevents JS access
+            secure: process.env.NODE_ENV === "production", // use HTTPS in prod
+            sameSite: "strict",    // CSRF protection
+            maxAge: 15 * 60 * 1000 // 15 minutes
+        });
+
+        res.cookie("adminRefreshToken", refreshToken, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production",
+            sameSite: "strict",
+            maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+        });
+
         return res.status(200).json(
             new ApiResponse(
                 200,
@@ -152,6 +167,21 @@ export const adminRefreshToken = asyncHandler(async (req, res) => {
 
     const { newAccessToken, newRefreshToken } = await refreshTokens(admin, 'admin', refreshToken);
 
+    // Set tokens in cookies
+    res.cookie("adminAccessToken", newAccessToken, {
+        httpOnly: true,        // prevents JS access
+        secure: process.env.NODE_ENV === "production", // use HTTPS in prod
+        sameSite: "strict",    // CSRF protection
+        maxAge: 15 * 60 * 1000 // 15 minutes
+    });
+
+    res.cookie("adminRefreshToken", newRefreshToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "strict",
+        maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+    });
+
     return res.status(200).json(
         new ApiResponse(
             200,
@@ -167,7 +197,7 @@ export const adminRefreshToken = asyncHandler(async (req, res) => {
 // Customer Send OTP
 export const customerSendOtp = asyncHandler(async (req, res) => {
     const { phone, refId } = req.body;
- 
+
     // Validate phone number
     if (!phone || phone.length < 10) {
         return res.status(400).json(new ApiResponse(400, null, "Valid phone number is required"));
@@ -554,6 +584,21 @@ export const managerVerifyLogin = asyncHandler(async (req, res) => {
         manager.refreshToken = refreshToken;
         await manager.save();
 
+        // Set tokens in cookies
+        res.cookie("managerAccessToken", accessToken, {
+            httpOnly: true,        // prevents JS access
+            secure: process.env.NODE_ENV === "production", // use HTTPS in prod
+            sameSite: "strict",    // CSRF protection
+            maxAge: 15 * 60 * 1000 // 15 minutes
+        });
+
+        res.cookie("managerRefreshToken", refreshToken, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production",
+            sameSite: "strict",
+            maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+        });
+
         return res.status(200).json(
             new ApiResponse(
                 200,
@@ -609,6 +654,21 @@ export const managerRefreshToken = asyncHandler(async (req, res) => {
     // Update the refresh token in database
     manager.refreshToken = newRefreshToken;
     await manager.save();
+
+    // Set tokens in cookies
+    res.cookie("managerAccessToken", newAccessToken, {
+        httpOnly: true,        // prevents JS access
+        secure: process.env.NODE_ENV === "production", // use HTTPS in prod
+        sameSite: "strict",    // CSRF protection
+        maxAge: 15 * 60 * 1000 // 15 minutes
+    });
+
+    res.cookie("managerRefreshToken", newRefreshToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "strict",
+        maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+    });
 
     return res.status(200).json(
         new ApiResponse(
@@ -694,6 +754,21 @@ export const storeVerifyLogin = asyncHandler(async (req, res) => {
         store.refreshToken = refreshToken;
         await store.save();
 
+        // Set tokens in cookies
+        res.cookie("storeAccessToken", accessToken, {
+            httpOnly: true,        // prevents JS access
+            secure: process.env.NODE_ENV === "production", // use HTTPS in prod
+            sameSite: "strict",    // CSRF protection
+            maxAge: 15 * 60 * 1000 // 15 minutes
+        });
+
+        res.cookie("storeRefreshToken", refreshToken, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production",
+            sameSite: "strict",
+            maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+        });
+
         return res.status(200).json(
             new ApiResponse(
                 200,
@@ -746,9 +821,25 @@ export const storeRefreshToken = asyncHandler(async (req, res) => {
     const newAccessToken = generateAccessToken(store, 'store');
     const newRefreshToken = generateRefreshToken(store, 'store');
 
+
     // Update the refresh token in database
     store.refreshToken = newRefreshToken;
     await store.save();
+
+    // Set tokens in cookies
+    res.cookie("storeAccessToken", newAccessToken, {
+        httpOnly: true,        // prevents JS access
+        secure: process.env.NODE_ENV === "production", // use HTTPS in prod
+        sameSite: "strict",    // CSRF protection
+        maxAge: 15 * 60 * 1000 // 15 minutes
+    });
+
+    res.cookie("storeRefreshToken", newRefreshToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "strict",
+        maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+    });
 
     return res.status(200).json(
         new ApiResponse(
