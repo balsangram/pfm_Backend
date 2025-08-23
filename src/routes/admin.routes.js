@@ -38,7 +38,7 @@ router.post("/refresh-token", adminRefreshToken);
 router.use(verifyJWT, verifyRole("admin"));
 
 router.get("/profile", AdminProfileController.adminProfile);
-router.patch("/update-profile", AdminProfileController.adminUpdateProfile);
+router.patch("/update-profile",upload.any(), AdminProfileController.adminUpdateProfile);
 router.delete("/delete-account", AdminProfileController.adminDeleteAccount);
 router.patch("/change-password", AdminProfileController.adminChangePassword);
 router.post("/logout", AdminProfileController.adminLogout);

@@ -5,6 +5,8 @@ import { ApiResponse } from "../../utils/ApiResponse.js";
 import { asyncHandler } from "../../utils/asyncHandler.js";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
+import cloudinary from "../../utils/cloudinary.js"; // make sure you set this up
+
 
 const adminProfile = asyncHandler(async (req, res, next) => {
     try {
@@ -31,6 +33,32 @@ const adminProfile = asyncHandler(async (req, res, next) => {
     }
 });
 
+// const adminUpdateProfile = asyncHandler(async (req, res) => {
+//     const { firstName, lastName, phone, email } = req.body;
+
+//     // Get admin ID from JWT token
+//     const token = req.cookies?.accessToken;
+//     if (!token) throw new ApiError(401, "Not authorized, token missing");
+
+//     const decoded = jwt.verify(token, ACCESS_TOKEN_SECRET);
+//     const adminId = decoded.userId;
+
+//     // Update admin profile
+//     const updatedAdmin = await Admin.findByIdAndUpdate(
+//         adminId,
+//         { firstName, lastName, phone, email }, // ✅ use correct fields
+//         { new: true, runValidators: true }
+//     ).select("-password");
+
+//     if (!updatedAdmin) {
+//         throw new ApiError(404, "Admin not found");
+//     }
+
+//     return res.status(200).json(
+//         new ApiResponse(200, updatedAdmin, "Profile updated successfully")
+//     );
+// });
+
 const adminUpdateProfile = asyncHandler(async (req, res) => {
     const { firstName, lastName, phone, email } = req.body;
 
@@ -41,10 +69,21 @@ const adminUpdateProfile = asyncHandler(async (req, res) => {
     const decoded = jwt.verify(token, ACCESS_TOKEN_SECRET);
     const adminId = decoded.userId;
 
+    let updateData = { firstName, lastName, phone, email };
+
+    // ✅ Handle image upload if provided
+    if (req.files && req.files.length > 0) {
+        const file = req.files[0]; // taking first file
+        const uploadedImg = await cloudinary.uploader.upload(file.path, {
+            folder: "admin_profiles", // optional folder in cloudinary
+        });
+        updateData.img = uploadedImg.secure_url; // store URL in DB
+    }
+
     // Update admin profile
     const updatedAdmin = await Admin.findByIdAndUpdate(
         adminId,
-        { firstName, lastName, phone, email }, // ✅ use correct fields
+        updateData,
         { new: true, runValidators: true }
     ).select("-password");
 
@@ -56,6 +95,7 @@ const adminUpdateProfile = asyncHandler(async (req, res) => {
         new ApiResponse(200, updatedAdmin, "Profile updated successfully")
     );
 });
+
 
 const adminDeleteAccount = asyncHandler(async (req, res) => {
     // 1️⃣ Get JWT from cookies

@@ -172,7 +172,7 @@ const addAddress = asyncHandler(async (req, res) => {
             // Use only the city for geocoding
             const response = await axios.get("https://nominatim.openstreetmap.org/search", {
                 params: {
-                    q: city,       // city only
+                    q: pincode,       // city only
                     format: "json",
                     limit: 1       // get the first result
                 },
@@ -220,7 +220,7 @@ const addAddress = asyncHandler(async (req, res) => {
     await customer.save();
 
     return res.status(201).json(
-        new ApiResponse(201, customer.address, "Address added successfully")
+        new ApiResponse(201, "Address added successfully")
     );
 });
 
@@ -269,7 +269,7 @@ const editAddress = asyncHandler(async (req, res) => {
         const fullAddress = `${address.houseNo}, ${address.street}, ${address.city}, ${address.state}, ${address.pincode}`;
         try {
             const response = await axios.get("https://nominatim.openstreetmap.org/search", {
-                params: { q: address.city, format: "json", limit: 1 },
+                params: { q: address.pincode, format: "json", limit: 1 },
                 headers: { 'User-Agent': 'PFM-App/1.0' } // required by Nominatim
             });
 

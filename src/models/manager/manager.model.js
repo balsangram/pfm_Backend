@@ -9,7 +9,7 @@ const managerSchema = new mongoose.Schema({
         maxlength: 50
     },
     img: {
-        require: String,
+        type: String,
     },
     lastName: {
         type: String,
@@ -72,7 +72,12 @@ const managerSchema = new mongoose.Schema({
     lastLogin: {
         type: Date,
         default: Date.now
-    }
+    },
+    pincode: {
+        type: String,
+        required: true,
+        trim: true
+    },
 },
     {
         timestamps: true
@@ -83,6 +88,7 @@ const managerSchema = new mongoose.Schema({
 managerSchema.index({ phone: 1 });
 managerSchema.index({ email: 1 });
 managerSchema.index({ store: 1 });
+managerSchema.index({ pincode: 1 });
 managerSchema.index({ isActive: 1 });
 
 const Manager = mongoose.model("Manager", managerSchema);

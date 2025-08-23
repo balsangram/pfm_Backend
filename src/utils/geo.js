@@ -16,17 +16,42 @@ function deg2rad(deg) {
     return deg * (Math.PI / 180);
 }
 
+// export function getNearestStore(stores, latitude, longitude) {
+//     console.log("🚀 ~ getNearestStore ~ stores, latitude, longitude:", stores, "qwertyuiop", latitude, longitude, "]]]]")
+//     let nearestStore = null;
+//     let minDistance = Infinity;
+
+//     for (const store of stores) {
+//         const distance = getDistanceFromLatLonInKm(latitude, longitude, store.lat, store.long);
+//         if (distance < minDistance) {
+//             minDistance = distance;
+//             nearestStore = store;
+//         }
+//     }
+
+//     console.log("🚀 ~ getNearestStore ~ nearestStore: ==", nearestStore)
+//     return nearestStore;
+// }
+
+
 export function getNearestStore(stores, latitude, longitude) {
+    console.log("🚀 ~ getNearestStore ~ stores, latitude, longitude:", stores, latitude, longitude)
+
     let nearestStore = null;
     let minDistance = Infinity;
 
     for (const store of stores) {
         const distance = getDistanceFromLatLonInKm(latitude, longitude, store.lat, store.long);
+
         if (distance < minDistance) {
             minDistance = distance;
             nearestStore = store;
         }
     }
 
-    return nearestStore;
+    console.log("🚀 ~ getNearestStore ~ nearestStore: ==", nearestStore);
+
+    // return whole store object or only managerId
+    return nearestStore ? nearestStore.managerId : null;
 }
+

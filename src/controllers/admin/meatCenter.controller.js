@@ -26,6 +26,7 @@ export const createMeatCenter = asyncHandler(async (req, res) => {
         managerEmail,
         latitude,
         longitude,
+        pincode,
         products
     } = req.body;
 
@@ -48,9 +49,11 @@ export const createMeatCenter = asyncHandler(async (req, res) => {
         phone: managerPhone, // ensure phone is set to avoid unique null duplication
         lat: parseFloat(latitude),
         long: parseFloat(longitude),
+        pincode: pincode,
         products: products,
         isActive: true
     });
+    console.log("🚀 ~ store:", store)
 
     // Create manager linked to the store
     const manager = await Manager.create({
@@ -63,8 +66,10 @@ export const createMeatCenter = asyncHandler(async (req, res) => {
         storeLocation: location,
         lat: parseFloat(latitude),
         long: parseFloat(longitude),
+        pincode: pincode,
         store: store._id
     });
+    console.log("🚀 ~ manager:", manager)
 
     // Update store with manager reference
     store.manager = manager._id;

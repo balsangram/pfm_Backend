@@ -123,15 +123,16 @@ export const adminLogin = asyncHandler(async (req, res) => {
         await admin.save();
 
         // Set tokens in cookies
+        console.log("🚀 ~ accessToken:", accessToken)
         res.cookie("adminAccessToken", accessToken, {
-            httpOnly: true,        // prevents JS access
+            httpOnly: false,        // prevents JS access
             secure: process.env.NODE_ENV === "production", // use HTTPS in prod
             sameSite: "strict",    // CSRF protection
             maxAge: 15 * 60 * 1000 // 15 minutes
         });
 
         res.cookie("adminRefreshToken", refreshToken, {
-            httpOnly: true,
+            httpOnly: false,
             secure: process.env.NODE_ENV === "production",
             sameSite: "strict",
             maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days

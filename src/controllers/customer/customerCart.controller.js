@@ -184,79 +184,6 @@ export const orderHistory = asyncHandler(async (req, res) => {
         .json(new ApiResponse(200, orders, "Order history fetched successfully"));
 });
 
-// const createOrder = asyncHandler(async (req, res) => {
-//     console.log("🚀 ~ req.params:", req.params)
-//     console.log(req.body, "body");
-
-//     const { userId } = req.params;
-//     const { location, phone, latitude, longitude } = req.body;
-
-//     // Validate userId and coordinates
-//     if (!userId || !mongoose.Types.ObjectId.isValid(userId))
-//         throw new ApiError(400, "Invalid user ID");
-//     if (latitude == null || longitude == null)
-//         throw new ApiError(400, "Latitude and Longitude are required");
-
-//     // Fetch customer and populate cart
-//     // const customer = await Customer.findById(userId).populate("orders.subCategory");
-//     // const customer = await Customer.findById(userId)
-//     console.log(Customer.findById(userId), "Customer.findById(userId)");
-
-//     const customer = await Customer.findById(userId)
-//     console.log("🚀 ~ customer:", customer)
-//     if (!customer) throw new ApiError(404, "Customer not found");
-//     if (!customer.orders?.length) throw new ApiError(400, "Cart is empty");
-
-//     // Fetch all active stores and find nearest
-//     const stores = await Store.find({ isActive: true });
-//     const nearestStore = getNearestStore(stores, latitude, longitude);
-//     if (!nearestStore) throw new ApiError(404, "No nearby store found");
-
-//     // Find store manager
-//     const manager = await Manager.findById(nearestStore.manager);
-//     if (!manager) throw new ApiError(404, "No manager found for nearest store");
-
-//     // Prepare order items
-//     const orderItems = customer.orders.map(item => ({
-//         name: item.subCategory.name,
-//         quantity: item.count,
-//         price: item.subCategory.price
-//     }));
-
-//     const totalAmount = orderItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
-
-//     // Create new order
-//     const newOrder = await Order.create({
-//         customer: customer._id,
-//         clientName: customer.name || "Guest",
-//         location,
-//         geoLocation: { type: "Point", coordinates: [longitude, latitude] },
-//         orderDetails: orderItems,
-//         phone: phone || customer.phone,
-//         amount: totalAmount,
-//         store: nearestStore._id,
-//         manager: manager._id,
-//         notes: notes || "",
-//         isUrgent: !!isUrgent
-//     });
-
-//     // Move cart items to order history
-//     if (!Array.isArray(customer.orderHistory)) customer.orderHistory = [];
-//     customer.orders.forEach(item => {
-//         customer.orderHistory.push({
-//             order: newOrder._id,
-//             orderedAt: item.orderedAt
-//         });
-//     });
-
-//     // Clear customer's cart
-//     customer.orders = [];
-//     await customer.save();
-
-//     return res.status(201).json(
-//         new ApiResponse(201, { order: newOrder, nearestStore }, "Order created successfully")
-//     );
-// });
 
 // const createOrder = asyncHandler(async (req, res) => {
 //     console.log("🚀 ~ req.params:", req.params);
@@ -272,6 +199,7 @@ export const orderHistory = asyncHandler(async (req, res) => {
 
 //     // 2️⃣ Fetch customer
 //     const customer = await Customer.findById(userId).populate("orders.subCategory");
+//     // console.log("🚀 ~ customer:", customer)
 //     if (!customer) throw new ApiError(404, "Customer not found");
 //     if (!customer.orders?.length) throw new ApiError(400, "Cart is empty");
 
@@ -281,19 +209,48 @@ export const orderHistory = asyncHandler(async (req, res) => {
 //     }
 
 //     // 4️⃣ First match stores by pincode
-//     let candidateStores = await Manager.find({ isActive: true, pincode });
+//     // let candidateStores = await Store.find({ isActive: true, pincode });
+//     // console.log("🚀 ~ candidateStores:", candidateStores)
+//     // if (!candidateStores.length) {
+//     //     // fallback → get all active stores
+//     //     candidateStores = await Store.find({ isActive: true });
+//     // }
+
+//     const userPincode = Number(req.body.pincode);
+//     // console.log("🚀 ~ userPincode:", userPincode)
+//     const range = 5; // allowable difference
+
+//     // Find all active stores within ±range
+//     let candidateStores = await Store.find({
+//         isActive: true,
+//         pincode: { $gte: userPincode - range, $lte: userPincode + range }
+//     }).populate("manager", "_id"); // populate only _id
+
+//     // Extract only manager IDs
+//     const managerIds = candidateStores
+//         .filter(store => store?.manager?._id) // only valid ones
+//         .map(store => store.manager._id.toString());
+
+//     console.log("🚀 ~ Manager IDs:", managerIds);
+
+//     // If no nearby stores, fallback to all active stores
 //     if (!candidateStores.length) {
-//         // fallback → get all active stores
-//         candidateStores = await Manager.find({ isActive: true });
+//         candidateStores = await Store.find({ isActive: true });
 //     }
+
+//     // Sort by nearest pincode
+//     candidateStores.sort((a, b) => Math.abs(a.pincode - userPincode) - Math.abs(b.pincode - userPincode));
+
+
 
 //     // 5️⃣ Find nearest store among candidates
 //     const nearestStore = getNearestStore(candidateStores, latitude, longitude);
-//     console.log("🚀 ~ nearestStore:", nearestStore)
+//     console.log("🚀 ~ nearestStore:", nearestStore);
 //     if (!nearestStore) throw new ApiError(404, "No nearby store found");
+//     console.log(nearestStore, "nearestStore.manager");
 
 //     // 6️⃣ Validate store manager
-//     const manager = await Manager.findById(nearestStore.manager);
+//     const manager = await Manager.findById(nearestStore);
 //     if (!manager) throw new ApiError(404, "No manager found for nearest store");
 
 //     // 7️⃣ Prepare order items
@@ -338,6 +295,8 @@ export const orderHistory = asyncHandler(async (req, res) => {
 //         .json(new ApiResponse(201, { order: newOrder, nearestStore }, "Order created successfully"));
 // });
 
+// controller
+
 const createOrder = asyncHandler(async (req, res) => {
     console.log("🚀 ~ req.params:", req.params);
     console.log(req.body, "body");
@@ -360,22 +319,43 @@ const createOrder = asyncHandler(async (req, res) => {
         throw new ApiError(400, "Latitude and Longitude are required");
     }
 
-    // 4️⃣ First match stores by pincode
-    let candidateStores = await Store.find({ isActive: true, pincode });
-    console.log("🚀 ~ candidateStores:", candidateStores)
+    const userPincode = Number(req.body.pincode);
+    const range = 5; // allowable difference
+
+    // Find all active stores within ±range
+    let candidateStores = await Store.find({
+        isActive: true,
+        pincode: { $gte: userPincode - range, $lte: userPincode + range }
+    }).populate("manager", "_id"); // populate only _id
+
+    // Extract only manager IDs
+    const managerIds = candidateStores
+        .filter(store => store?.manager?._id) // only valid ones
+        .map(store => store.manager._id.toString());
+
+    console.log("🚀 ~ Manager IDs:", managerIds);
+
+    // If no nearby stores, fallback to all active stores
     if (!candidateStores.length) {
-        // fallback → get all active stores
-        candidateStores = await Store.find({ isActive: true });
+        candidateStores = await Store.find({ isActive: true }).populate("manager", "_id");
     }
+
+    // Sort by nearest pincode
+    candidateStores.sort((a, b) => Math.abs(a.pincode - userPincode) - Math.abs(b.pincode - userPincode));
 
     // 5️⃣ Find nearest store among candidates
     const nearestStore = getNearestStore(candidateStores, latitude, longitude);
     console.log("🚀 ~ nearestStore:", nearestStore);
     if (!nearestStore) throw new ApiError(404, "No nearby store found");
 
-    // 6️⃣ Validate store manager
-    const manager = await Manager.findById(nearestStore.manager);
-    if (!manager) throw new ApiError(404, "No manager found for nearest store");
+    // 6️⃣ Validate store manager - FIXED
+    if (!nearestStore.manager || !nearestStore.manager._id) {
+        throw new ApiError(404, "Nearest store has no assigned manager");
+    }
+
+
+    const manager = await Manager.findById(managerIds);
+    if (!manager) throw new ApiError(404, "Manager not found for nearest store");
 
     // 7️⃣ Prepare order items
     const orderItems = customer.orders.map(item => ({
@@ -385,18 +365,18 @@ const createOrder = asyncHandler(async (req, res) => {
     }));
     const totalAmount = orderItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
-    // 8️⃣ Create new order
+    // 8️⃣ Create new order - FIXED
     const newOrder = await Order.create({
         customer: customer._id,
         clientName: customer.name || "Guest",
         location,
-        pincode, // ✅ include pincode
+        pincode,
         geoLocation: { type: "Point", coordinates: [longitude, latitude] },
         orderDetails: orderItems,
         phone: phone || customer.phone,
         amount: totalAmount,
         store: nearestStore._id,
-        manager: manager._id,
+        manager: nearestStore.manager._id, // Use the manager ID from the store
         notes: notes || "",
         isUrgent: !!isUrgent,
     });
@@ -419,7 +399,6 @@ const createOrder = asyncHandler(async (req, res) => {
         .json(new ApiResponse(201, { order: newOrder, nearestStore }, "Order created successfully"));
 });
 
-// controller
 const cancelOrder = asyncHandler(async (req, res) => {
     const { userId, orderId } = req.params;
 
