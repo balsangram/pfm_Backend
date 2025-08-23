@@ -8,38 +8,29 @@ import customerRoutes from "./src/routes/customer.routes.js";
 import cookieParser from 'cookie-parser'
 
 const app = express();
-app.use(cors());
+
+// CORS configuration for frontend
+const corsOptions = {
+  origin: ['http://localhost:5173', 'http://localhost:3000', 'http://localhost:3001'],
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
+};
+
+app.use(cors(corsOptions));
 app.use(express.json());
 app.use(cookieParser())
 
 // Add request logging middleware
-// app.use((req, res, next) => {
-//     console.log(`📥 ${req.method} ${req.path} - ${new Date().toISOString()}`);
-//     next();
-// });
+app.use((req, res, next) => {
+    console.log(`📥 ${req.method} ${req.path} - ${new Date().toISOString()}`);
+    next();
+});
 
 // Example route
 app.get('/', (req, res) => {
     res.send('Server is running! 22-08-2025 3.36pm');
 });
-
-// import axios from "axios";
-
-// const callDemoApi = async () => {
-//   try {
-//     const response = await axios.get(`https://pfm-backend-1gdg.onrender.com`);
-//     console.log("🚀 API Response:", response.data);
-//   } catch (error) {
-//     console.error("❌ API Error:", error.message);
-//   } finally {
-//     // Schedule next call after 2 minutes
-//     setTimeout(callDemoApi, 120000);
-//   }
-// };
-
-// // 👉 Start the loop
-// callDemoApi();
-
 
 app.get('/api/example', (req, res) => {
     res.json({ message: 'Example route' });
