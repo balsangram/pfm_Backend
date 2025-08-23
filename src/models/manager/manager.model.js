@@ -73,6 +73,11 @@ const managerSchema = new mongoose.Schema({
         type: Date,
         default: Date.now
     },
+    refreshToken: {
+        type: String,
+        default: null
+
+    },
     pincode: {
         type: String,
         required: true,
