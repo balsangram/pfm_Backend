@@ -72,10 +72,6 @@ const managerSchema = new mongoose.Schema({
     lastLogin: {
         type: Date,
         default: Date.now
-    },
-    refreshToken: {
-        type: String,
-        default: null
     }
 },
     {
