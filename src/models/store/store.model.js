@@ -38,6 +38,11 @@ const storeSchema = new mongoose.Schema({
         type: Boolean,
         default: true
     },
+    refreshToken: {
+        type: String,
+        default: null
+    }
+    },
     pincode: {
         type: String,
         required: true,
