@@ -37,7 +37,7 @@ const storeSchema = new mongoose.Schema({
     isActive: {
         type: Boolean,
         default: true
-    }
+
     },
     pincode: {
         type: String,
