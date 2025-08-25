@@ -3,6 +3,7 @@ import { asyncHandler } from "../../utils/asyncHandler.js";
 import Categories from "../../models/catalog/categories.model.js"
 import TypeCategory from "../../models/catalog/typeCategories.model.js";
 import SubCategory from "../../models/catalog/subCategorySchema.model.js";
+import mongoose from "mongoose";
 
 const allCategories = asyncHandler(async (req, res) => {
     // Fetch only name and img
@@ -28,9 +29,10 @@ const allCategoriesSubProducts = asyncHandler(async (req, res) => {
 
     console.log("🚀 ~ req.params:", req.params)
     const { id } = req.params; // Category ID
+    const objectId = new mongoose.Types.ObjectId(id);
 
     // Find the category and populate typeCategories -> subCategories
-    const category = await Categories.findById(id)
+    const category = await Categories.findById(objectId)
         .populate({
             path: "typeCategories",
             populate: {
@@ -70,9 +72,10 @@ const categoriesTypes = asyncHandler(async (req, res) => {
 
 const typeCategoriesAllCard = asyncHandler(async (req, res) => {
     const { id } = req.params; // TypeCategory ID
+    const objectId = new mongoose.Types.ObjectId(id);
 
     // Find the TypeCategory by ID and populate subCategories
-    const typeCategory = await TypeCategory.findById(id)
+    const typeCategory = await TypeCategory.findById(objectId)
         .select("name subCategories")
         .populate({
             path: "subCategories",
@@ -90,9 +93,10 @@ const typeCategoriesAllCard = asyncHandler(async (req, res) => {
 
 const fullDetailsOfSubCategorieCard = asyncHandler(async (req, res) => {
     const { id } = req.params; // SubCategory ID
+    const objectId = new mongoose.Types.ObjectId(id);
 
     // Find subcategory by ID
-    const subCategory = await SubCategory.findById(id);
+    const subCategory = await SubCategory.findById(objectId);
 
     if (!subCategory) {
         return res.status(404).json(new ApiResponse(404, null, "Subcategory not found"));
