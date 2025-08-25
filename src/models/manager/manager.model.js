@@ -20,7 +20,7 @@ const managerSchema = new mongoose.Schema({
     },
     email: {
         type: String,
-        required: true,
+        // required: true,
         unique: true,
         trim: true,
         lowercase: true
@@ -80,7 +80,7 @@ const managerSchema = new mongoose.Schema({
     },
     pincode: {
         type: String,
-        required: true,
+        // required: true,
         trim: true
     },
 },

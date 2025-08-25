@@ -57,6 +57,7 @@ router.get("/delivery-partners/:id", DeliveryPartnerController.getDeliveryPartne
 router.post("/delivery-partners", DeliveryPartnerController.createDeliveryPartner);
 router.patch("/delivery-partners/:id", DeliveryPartnerController.updateDeliveryPartnerStatus);
 router.delete("/delivery-partners/:id", DeliveryPartnerController.deleteDeliveryPartner);
+router.patch("/update-delevery-partners/:id", DeliveryPartnerController.editDeleveryPArtner);
 
 // Send Notification
 router.post("/send-notification", SendNotificationController.sendNotification);

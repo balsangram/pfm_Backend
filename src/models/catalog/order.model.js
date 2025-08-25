@@ -46,7 +46,7 @@ const orderSchema = new mongoose.Schema({
     },
     pincode: {
         type: String,
-        required: true,
+        // required: true,
         trim: true
     },
     geoLocation: {

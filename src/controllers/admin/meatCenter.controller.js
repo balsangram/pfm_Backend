@@ -7,8 +7,9 @@ import Manager from '../../models/manager/manager.model.js';
 // Get all meat centers
 export const getMeatCenters = asyncHandler(async (req, res) => {
     const stores = await Store.find({ isActive: true })
-        .populate('manager', 'firstName lastName phone email')
+        .populate('manager', 'firstName lastName phone email pincode')
         .select('-__v');
+    console.log("🚀 ~ stores:", stores)
 
     return res.status(200).json(
         new ApiResponse(200, stores, "Meat centers retrieved successfully")
@@ -86,25 +87,104 @@ export const createMeatCenter = asyncHandler(async (req, res) => {
 });
 
 // Update a meat center
-export const updateMeatCenter = asyncHandler(async (req, res) => {
+// export const updateMeatCenter = asyncHandler(async (req, res) => {
+//     const { id } = req.params;
+//     const updateData = req.body;
+//     console.log("🚀 ~ req.body:", req.body)
+
+//     const store = await Store.findByIdAndUpdate(
+//         id,
+//         { $set: updateData },
+//         { new: true, runValidators: true }
+//     ).populate('manager', 'firstName lastName phone email')
+//         .select('-__v');
+
+//     if (!store) {
+//         throw new ApiError(404, "Meat center not found");
+//     }
+
+//     return res.status(200).json(
+//         new ApiResponse(200, store, "Meat center updated successfully")
+//     );
+// });
+
+const updateMeatCenter = asyncHandler(async (req, res) => {
     const { id } = req.params;
-    const updateData = req.body;
+    const {
+        storeName,
+        location,
+        managerPhone,
+        managerFirstName,
+        managerLastName,
+        managerEmail,
+        latitude,
+        longitude,
+        pincode,
+        products
+    } = req.body;
 
-    const store = await Store.findByIdAndUpdate(
-        id,
-        { $set: updateData },
-        { new: true, runValidators: true }
-    ).populate('manager', 'firstName lastName phone email')
-        .select('-__v');
-
+    // Find the store
+    const store = await Store.findById(id).populate("manager");
     if (!store) {
         throw new ApiError(404, "Meat center not found");
     }
 
+    // ✅ Check if another store with the same name exists
+    if (storeName && storeName !== store.name) {
+        const existingStore = await Store.findOne({ name: storeName, _id: { $ne: id } });
+        if (existingStore) {
+            throw new ApiError(409, "Another store with this name already exists");
+        }
+    }
+
+    // ✅ Check if another manager with same phone exists
+    if (managerPhone && store.manager?.phone !== managerPhone) {
+        const existingManager = await Manager.findOne({ phone: managerPhone, _id: { $ne: store.manager?._id } });
+        if (existingManager) {
+            throw new ApiError(409, "Another manager with this phone number already exists");
+        }
+    }
+
+    // ✅ Update store fields
+    store.name = storeName || store.name;
+    store.location = location || store.location;
+    store.phone = managerPhone || store.phone;
+    store.lat = latitude ? parseFloat(latitude) : store.lat;
+    store.long = longitude ? parseFloat(longitude) : store.long;
+    store.pincode = pincode || store.pincode;
+    store.products = products || store.products;
+
+    await store.save();
+
+    // ✅ Update manager fields if manager exists
+    if (store.manager) {
+        const manager = await Manager.findById(store.manager._id);
+        if (manager) {
+            manager.firstName = managerFirstName || manager.firstName;
+            manager.lastName = managerLastName || manager.lastName;
+            manager.email = managerEmail || manager.email;
+            manager.phone = managerPhone || manager.phone;
+            manager.location = location || manager.location;
+            manager.storeName = storeName || manager.storeName;
+            manager.storeLocation = location || manager.storeLocation;
+            manager.lat = latitude ? parseFloat(latitude) : manager.lat;
+            manager.long = longitude ? parseFloat(longitude) : manager.long;
+            manager.pincode = pincode || manager.pincode;
+
+            await manager.save();
+        }
+    }
+
+    // ✅ Populate for response
+    const updatedStore = await Store.findById(store._id)
+        .populate("manager", "firstName lastName phone email")
+        .select("-__v");
+
     return res.status(200).json(
-        new ApiResponse(200, store, "Meat center updated successfully")
+        new ApiResponse(200, updatedStore, "Meat center updated successfully with manager")
     );
 });
+
 
 // Delete a meat center (soft delete)
 export const deleteMeatCenter = asyncHandler(async (req, res) => {

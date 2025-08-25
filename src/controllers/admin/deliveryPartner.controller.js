@@ -148,7 +148,7 @@ const createDeliveryPartner = asyncHandler(async (req, res) => {
 
 
 // Get all delivery partners with filtering and pagination
- const getAllDeliveryPartners = asyncHandler(async (req, res) => {
+const getAllDeliveryPartners = asyncHandler(async (req, res) => {
     const {
         page = 1,
         limit = 10,
@@ -210,10 +210,15 @@ export const getDeliveryPartnerById = asyncHandler(async (req, res) => {
     );
 });
 
+// update paqrtner 
+
+
+
 // Update delivery partner status
-export const updateDeliveryPartnerStatus = asyncHandler(async (req, res) => {
+const updateDeliveryPartnerStatus = asyncHandler(async (req, res) => {
     const { id } = req.params;
     const { status } = req.body;
+    console.log("🚀 ~ req.body:", req.body)
 
     if (!status || !['verified', 'pending'].includes(status)) {
         return res.status(400).json(
@@ -227,6 +232,7 @@ export const updateDeliveryPartnerStatus = asyncHandler(async (req, res) => {
         { new: true, runValidators: true }
     ).select('-__v');
 
+    console.log("🚀 ~ deliveryPartner:", deliveryPartner)
     if (!deliveryPartner) {
         return res.status(404).json(
             new ApiResponse(404, null, "Delivery partner not found")
@@ -402,6 +408,41 @@ export const getDeliveryPartnerStats = asyncHandler(async (req, res) => {
     );
 });
 
+const editDeleveryPArtner = asyncHandler(async (req, res) => {
+    const { id } = req.params;
+    const { name, phone, storeId, status } = req.body;
+
+    // Validate status if provided
+    if (status && !['verified', 'pending', 'rejected'].includes(status)) {
+        return res.status(400).json(
+            new ApiResponse(400, null, "Valid status (verified/pending/rejected) is required")
+        );
+    }
+
+    const updateData = {};
+    if (name) updateData.name = name;
+    if (phone) updateData.phone = phone;
+    if (storeId) updateData.storeId = storeId;
+    if (status) updateData.status = status;
+
+    const deliveryPartner = await DeliveryPartner.findByIdAndUpdate(
+        id,
+        updateData,
+        { new: true, runValidators: true }
+    ).select('-__v');
+
+    if (!deliveryPartner) {
+        return res.status(404).json(
+            new ApiResponse(404, null, "Delivery partner not found")
+        );
+    }
+
+    return res.status(200).json(
+        new ApiResponse(200, deliveryPartner, "Delivery partner updated successfully")
+    );
+});
+
+
 // Export the controller object
 export const DeliveryPartnerController = {
     createDeliveryPartner,
@@ -411,5 +452,6 @@ export const DeliveryPartnerController = {
     updateDocumentVerificationStatus,
     bulkUpdateDocumentVerification,
     deleteDeliveryPartner,
-    getDeliveryPartnerStats
+    getDeliveryPartnerStats,
+    editDeleveryPArtner
 };

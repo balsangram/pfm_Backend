@@ -34,8 +34,31 @@ function deg2rad(deg) {
 // }
 
 
+// export function getNearestStore(stores, latitude, longitude) {
+//     console.log("ehlel");
+//     console.log("🚀 ~ getNearestStore ~ stores, latitude, longitude:", stores, latitude, longitude)
+
+//     let nearestStore = null;
+//     let minDistance = Infinity;
+
+//     for (const store of stores) {
+//         const distance = getDistanceFromLatLonInKm(latitude, longitude, store.lat, store.long);
+
+//         if (distance < minDistance) {
+//             minDistance = distance;
+//             nearestStore = store;
+//         }
+//     }
+
+//     console.log("🚀 ~ getNearestStore ~ nearestStore: ==", nearestStore);
+
+//     // return whole store object or only managerId
+//     return nearestStore ? nearestStore.managerId : null;
+// }
+
 export function getNearestStore(stores, latitude, longitude) {
-    console.log("🚀 ~ getNearestStore ~ stores, latitude, longitude:", stores, latitude, longitude)
+    console.log("ehlel");
+    console.log("🚀 ~ getNearestStore ~ stores, latitude, longitude:", stores, latitude, longitude);
 
     let nearestStore = null;
     let minDistance = Infinity;
@@ -51,7 +74,6 @@ export function getNearestStore(stores, latitude, longitude) {
 
     console.log("🚀 ~ getNearestStore ~ nearestStore: ==", nearestStore);
 
-    // return whole store object or only managerId
-    return nearestStore ? nearestStore.managerId : null;
+    // ✅ return the store itself, not managerId
+    return nearestStore;
 }
-
