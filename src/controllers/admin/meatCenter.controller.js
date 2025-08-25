@@ -38,10 +38,10 @@ export const createMeatCenter = asyncHandler(async (req, res) => {
     }
 
     // Check if store with this name already exists
-    const existingStore = await Store.findOne({ name: storeName });
-    if (existingStore) {
-        throw new ApiError(409, "Store with this name already exists");
-    }
+    // const existingStore = await Store.findOne({ name: storeName });
+    // if (existingStore) {
+    //     throw new ApiError(409, "Store with this name already exists");
+    // }
 
     // Create store first
     const store = await Store.create({
@@ -130,12 +130,12 @@ const updateMeatCenter = asyncHandler(async (req, res) => {
     }
 
     // ✅ Check if another store with the same name exists
-    if (storeName && storeName !== store.name) {
-        const existingStore = await Store.findOne({ name: storeName, _id: { $ne: id } });
-        if (existingStore) {
-            throw new ApiError(409, "Another store with this name already exists");
-        }
-    }
+    // if (storeName && storeName !== store.name) {
+    //     const existingStore = await Store.findOne({ name: storeName, _id: { $ne: id } });
+    //     if (existingStore) {
+    //         throw new ApiError(409, "Another store with this name already exists");
+    //     }
+    // }
 
     // ✅ Check if another manager with same phone exists
     if (managerPhone && store.manager?.phone !== managerPhone) {
