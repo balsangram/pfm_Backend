@@ -477,23 +477,21 @@ export const createOrder = asyncHandler(async (req, res) => {
         quantity: item.count,
         price: item.subCategory.price,
     }));
-    const totalAmount = orderItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
+    let totalAmount = orderItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
     console.log("🚀 ~ totalAmount:", totalAmount)
 
     console.log(couponsId, "couponsId");
 
-    const coupon = await Coupons.findById(couponsId);
-    console.log(walletPoint, "walletPoint");
-
-    console.log("🚀 ~ coupon:", coupon)
     if (walletPoint > 0) {
-        console.log("------");
-
-        totalAmount = totalAmount - walletPoint;
-        console.log("🚀 ~ totalAmount:", totalAmount)
-    } else if (coupon) {
-        console.log("no coupon");
-
+        totalAmount -= walletPoint;
+    } else if (couponsId) {
+        const coupon = await Coupons.findById(couponsId);
+        console.log("🚀 ~ coupon:", coupon.discount)
+        let discountPercent = coupon.discount;
+        let discountAmount = (totalAmount * discountPercent) / 100;
+        if (coupon) {
+            totalAmount -= discountAmount; // example
+        }
     }
 
     console.log("🚀 ~ totalAmount:", totalAmount)
