@@ -246,12 +246,6 @@ export const respondToOrder = asyncHandler(async (req, res) => {
         return res.status(404).json(new ApiResponse(404, null, "Delivery partner not found"));
     }
 
-    // Get delivery partner name for pickedUpBy field
-    const deliveryPartner = await DeliveryPartner.findById(deliveryPartnerId).select('name');
-    if (!deliveryPartner) {
-        return res.status(404).json(new ApiResponse(404, null, "Delivery partner not found"));
-    }
-
     if (action === 'accept') {
         // Check if order is already assigned to another delivery partner
         if (existing.deliveryPartner && existing.deliveryPartner.toString() !== deliveryPartnerId.toString()) {
