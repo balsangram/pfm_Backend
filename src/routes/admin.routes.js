@@ -38,7 +38,7 @@ router.post("/refresh-token", adminRefreshToken);
 router.use(verifyJWT, verifyRole("admin"));
 
 router.get("/profile", AdminProfileController.adminProfile);
-router.patch("/update-profile",upload.any(), AdminProfileController.adminUpdateProfile);
+router.patch("/update-profile", upload.any(), AdminProfileController.adminUpdateProfile);
 router.delete("/delete-account", AdminProfileController.adminDeleteAccount);
 router.patch("/change-password", AdminProfileController.adminChangePassword);
 router.post("/logout", AdminProfileController.adminLogout);
@@ -48,6 +48,8 @@ router.get("/meat-centers", MeatCenterController.getMeatCenters);
 router.post("/meat-centers", MeatCenterController.createMeatCenter);
 router.patch("/meat-centers/:id", MeatCenterController.updateMeatCenter);
 router.delete("/meat-centers/:id", MeatCenterController.deleteMeatCenter);
+
+router.get("/all-store-name", MeatCenterController.displayAllStoreName);
 
 // Delivery Partner
 router.get("/delivery-partners", DeliveryPartnerController.getAllDeliveryPartners);
@@ -62,29 +64,32 @@ router.post("/send-notification", SendNotificationController.sendNotification);
 // Product Categories
 router.get("/product-categories", ProductCategoryController.getProductCategories);
 router.post("/product-categories", upload.any(), validateRequest(productCategorySchemaAdd), ProductCategoryController.createProductCategory);
-router.patch("/product-categories/:id", upload.any(), validateMultiple(productCategorySchemaEdit), ProductCategoryController.updateProductCategory);
+router.patch("/product-categories/:id",
+    upload.single("img"),
+    // upload.any()
+    validateMultiple(productCategorySchemaEdit), ProductCategoryController.updateProductCategory);
 router.delete("/product-categories/:id", ProductCategoryController.deleteProductCategory);
 
 // Type Category
 router.get("/type-categories/:id", ProductCategoryController.getTypeCategories);
-router.post("/type-categories/:id", upload.any(), validateRequest(typeCategorySchemaAdd), ProductCategoryController.createTypeCategory);
-router.patch("/type-categories/:id", upload.any(), validateMultiple(typeCategorySchemaEdit), ProductCategoryController.updateTypeCategory);
-router.delete("/type-categories/:id/product-categories/:categoryId", ProductCategoryController.deleteTypeCategory);
+router.post("/type-categories/:id", upload.single("img"), validateMultiple(typeCategorySchemaAdd), ProductCategoryController.createTypeCategory);
+router.patch("/type-categories/:id", upload.single("img"), validateMultiple(typeCategorySchemaEdit), ProductCategoryController.updateTypeCategory);
+router.delete("/type-categories/:id", ProductCategoryController.deleteTypeCategory);
 
 // Product Categories - Subcategories
 router.get("/sub-product-categories/:id",
     ProductCategoryController.getSubProductCategories);
 router.post(
-    "/sub-product-categories/:id", upload.any(),
+    "/sub-product-categories/:id", upload.single("img"),
     validateMultiple(subProductCategorySchemaAdd),
     ProductCategoryController.createSubProductCategory);
 router.patch(
-    "/sub-product-categories/:id", upload.any(),
+    "/sub-product-categories/:id", upload.single("img"),
     validateMultiple(subCategorySchemaEdit),
     ProductCategoryController.updateSubProductCategory
 );
 router.delete(
-    "/sub-product-categories/:id/type-categories/:categoryId",
+    "/sub-product-categories/:id",
     ProductCategoryController.deleteSubProductCategory
 );
 

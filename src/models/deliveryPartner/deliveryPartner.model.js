@@ -23,6 +23,13 @@ const deliveryPartnerSchema = new mongoose.Schema({
         enum: ['verified', 'pending'],
         default: 'pending'
     },
+    store: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Store",
+        required: false, // 👈 not required (optional)
+        default: null    // 👈 optional: sets default as null if not provided
+    }
+    ,
     // Document verification status
     documentStatus: {
         idProof: {
@@ -106,10 +113,10 @@ deliveryPartnerSchema.index({ isActive: 1 });
 deliveryPartnerSchema.index({ overallDocumentStatus: 1 });
 
 // Pre-save middleware to update overall document status
-deliveryPartnerSchema.pre('save', function(next) {
+deliveryPartnerSchema.pre('save', function (next) {
     const docStatus = this.documentStatus;
     const allStatuses = Object.values(docStatus);
-    
+
     if (allStatuses.every(status => status === 'verified')) {
         this.overallDocumentStatus = 'verified';
     } else if (allStatuses.some(status => status === 'rejected')) {
@@ -117,7 +124,7 @@ deliveryPartnerSchema.pre('save', function(next) {
     } else {
         this.overallDocumentStatus = 'pending';
     }
-    
+
     next();
 });
 

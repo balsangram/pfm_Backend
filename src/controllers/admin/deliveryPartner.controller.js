@@ -1,31 +1,87 @@
 import { asyncHandler } from "../../utils/asyncHandler.js";
 import { ApiResponse } from "../../utils/ApiResponse.js";
 import DeliveryPartner from "../../models/deliveryPartner/deliveryPartner.model.js";
+import mongoose from "mongoose";
+import Store from "../../models/store/store.model.js"
 
 // Create new delivery partner
-export const createDeliveryPartner = asyncHandler(async (req, res) => {
-    const { name, phone } = req.body;
+// export const createDeliveryPartner = asyncHandler(async (req, res) => {
+//     const { name, phone } = req.body;
 
-    // Validate required fields
+//     // Validate required fields
+//     if (!name || !phone) {
+//         return res.status(400).json(
+//             new ApiResponse(400, null, "Name and phone are required")
+//         );
+//     }
+
+//     // Check if phone is already registered
+//     const existingPartner = await DeliveryPartner.findOne({ phone });
+//     if (existingPartner) {
+//         return res.status(400).json(
+//             new ApiResponse(400, null, "Phone number is already registered")
+//         );
+//     }
+
+//     // Create new delivery partner with default values
+//     const newDeliveryPartner = await DeliveryPartner.create({
+//         name,
+//         phone,
+//         status: 'pending', // Default status
+//         documentStatus: {
+//             idProof: 'pending',
+//             addressProof: 'pending',
+//             vehicleDocuments: 'pending',
+//             drivingLicense: 'pending',
+//             insuranceDocuments: 'pending'
+//         },
+//         overallDocumentStatus: 'pending',
+//         isActive: false, // Inactive until documents are verified
+//         totalDeliveries: 0,
+//         totalAccepted: 0,
+//         totalRejected: 0,
+//         rating: 0
+//     });
+
+//     return res.status(201).json(
+//         new ApiResponse(201, newDeliveryPartner, "Delivery partner created successfully")
+//     );
+// });
+
+const createDeliveryPartner = asyncHandler(async (req, res) => {
+    const { name, phone, storeId } = req.body;
+    console.log("🚀 ~ req.body:", req.body);
+
     if (!name || !phone) {
-        return res.status(400).json(
-            new ApiResponse(400, null, "Name and phone are required")
-        );
+        return res.status(400).json(new ApiResponse(400, null, "Name and phone are required"));
     }
 
-    // Check if phone is already registered
     const existingPartner = await DeliveryPartner.findOne({ phone });
     if (existingPartner) {
-        return res.status(400).json(
-            new ApiResponse(400, null, "Phone number is already registered")
-        );
+        return res.status(400).json(new ApiResponse(400, null, "Phone number is already registered"));
     }
 
-    // Create new delivery partner with default values
+    let storeObjectId = null; // ✅ just assign, no ": string | null"
+
+    if (storeId) {
+        if (!mongoose.Types.ObjectId.isValid(storeId)) {
+            return res.status(400).json(new ApiResponse(400, null, "Invalid store ID"));
+        }
+
+        const existingStore = await Store.findById(storeId);
+        if (!existingStore) {
+            return res.status(404).json(new ApiResponse(404, null, "Store not found"));
+        }
+
+        // ✅ Convert ObjectId to string
+        storeObjectId = existingStore._id.toString();
+    }
+
     const newDeliveryPartner = await DeliveryPartner.create({
         name,
         phone,
-        status: 'pending', // Default status
+        store: storeObjectId, // store as string
+        status: 'pending',
         documentStatus: {
             idProof: 'pending',
             addressProof: 'pending',
@@ -34,7 +90,7 @@ export const createDeliveryPartner = asyncHandler(async (req, res) => {
             insuranceDocuments: 'pending'
         },
         overallDocumentStatus: 'pending',
-        isActive: false, // Inactive until documents are verified
+        isActive: false,
         totalDeliveries: 0,
         totalAccepted: 0,
         totalRejected: 0,
@@ -46,14 +102,59 @@ export const createDeliveryPartner = asyncHandler(async (req, res) => {
     );
 });
 
+// export const createDeliveryPartner = asyncHandler(async (req, res) => {
+//     const { name, phone, store } = req.body; // 👈 include store
+
+//     // Validate required fields
+//     if (!name || !phone) {
+//         return res.status(400).json(
+//             new ApiResponse(400, null, "Name and phone are required")
+//         );
+//     }
+
+//     // Check if phone is already registered
+//     const existingPartner = await DeliveryPartner.findOne({ phone });
+//     if (existingPartner) {
+//         return res.status(400).json(
+//             new ApiResponse(400, null, "Phone number is already registered")
+//         );
+//     }
+
+//     // Create new delivery partner with default values
+//     const newDeliveryPartner = await DeliveryPartner.create({
+//         name,
+//         phone,
+//         store: store || null, // 👈 optional, will save null if not provided
+//         status: 'pending',
+//         documentStatus: {
+//             idProof: 'pending',
+//             addressProof: 'pending',
+//             vehicleDocuments: 'pending',
+//             drivingLicense: 'pending',
+//             insuranceDocuments: 'pending'
+//         },
+//         overallDocumentStatus: 'pending',
+//         isActive: false,
+//         totalDeliveries: 0,
+//         totalAccepted: 0,
+//         totalRejected: 0,
+//         rating: 0
+//     });
+
+//     return res.status(201).json(
+//         new ApiResponse(201, newDeliveryPartner, "Delivery partner created successfully")
+//     );
+// });
+
+
 // Get all delivery partners with filtering and pagination
-export const getAllDeliveryPartners = asyncHandler(async (req, res) => {
-    const { 
-        page = 1, 
-        limit = 10, 
-        status, 
+ const getAllDeliveryPartners = asyncHandler(async (req, res) => {
+    const {
+        page = 1,
+        limit = 10,
+        status,
         overallDocumentStatus,
-        search 
+        search
     } = req.query;
 
     const skip = (page - 1) * limit;
@@ -204,7 +305,7 @@ export const bulkUpdateDocumentVerification = asyncHandler(async (req, res) => {
 
     for (const doc of documents) {
         const { documentType, status, notes } = doc;
-        
+
         if (!documentType || !status) {
             return res.status(400).json(
                 new ApiResponse(400, null, "Document type and status are required for each document")

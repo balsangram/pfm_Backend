@@ -134,9 +134,26 @@ export const deleteMeatCenter = asyncHandler(async (req, res) => {
     );
 });
 
+export const displayAllStoreName = asyncHandler(async (req, res) => {
+    try {
+        // Fetch only _id and name
+        const stores = await Store.find({}, { _id: 1, name: 1 });
+
+        return res.status(200).json(
+            new ApiResponse(200, stores, "All store names fetched successfully")
+        );
+    } catch (error) {
+        console.error("Error fetching stores:", error);
+        return res.status(500).json(
+            new ApiResponse(500, null, "Failed to fetch stores")
+        );
+    }
+});
+
 export const MeatCenterController = {
     getMeatCenters,
     createMeatCenter,
     updateMeatCenter,
-    deleteMeatCenter
+    deleteMeatCenter,
+    displayAllStoreName
 };

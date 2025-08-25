@@ -30,14 +30,17 @@ const addCoupons = asyncHandler(async (req, res) => {
 
     // Check for duplicate code
     const existing = await Coupons.findOne({ code });
+    console.log("🚀 ~ existing:", existing)
     if (existing) {
         throw new ApiError(400, "Coupon code already exists");
     }
 
     // Parse custom expiryDate format DD-MM-YYYY:HH:mm
     const parsedDate = parse(expiryDate, 'dd-MM-yyyy:HH:mm', new Date());
+    console.log("🚀 ~ parsedDate:", parsedDate)
 
     const newCoupon = new Coupons({ name, code, img, discount, expiryDate: parsedDate, limit });
+    console.log("🚀 ~ newCoupon:", newCoupon)
     await newCoupon.save();
 
     return res.status(201).json(
