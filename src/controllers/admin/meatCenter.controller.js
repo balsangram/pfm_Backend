@@ -185,7 +185,6 @@ const updateMeatCenter = asyncHandler(async (req, res) => {
     );
 });
 
-
 // Delete a meat center (soft delete)
 export const deleteMeatCenter = asyncHandler(async (req, res) => {
     const { id } = req.params;

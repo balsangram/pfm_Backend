@@ -118,6 +118,25 @@ const searchItem = asyncHandler(async (req, res) => {
 });
 
 
+const allSubCategories_bottom_search = asyncHandler(async (req, res) => {
+    try {
+        // ✅ Only fetch name and img
+        const subCategories = await SubCategory.find().select("name img");
+
+        if (!subCategories || subCategories.length === 0) {
+            throw new ApiError(404, "No subcategories found");
+        }
+
+        return res
+            .status(200)
+            .json(new ApiResponse(200, subCategories, "Subcategories fetched successfully"));
+    } catch (error) {
+        throw new ApiError(500, error.message || "Failed to fetch subcategories");
+    }
+});
+
+
+
 export const customerCategoriesController = {
     allCategories,
 
@@ -127,5 +146,6 @@ export const customerCategoriesController = {
     categoriesTypes,
     typeCategoriesAllCard,
     fullDetailsOfSubCategorieCard,
-    searchItem
+    searchItem,
+    allSubCategories_bottom_search
 };

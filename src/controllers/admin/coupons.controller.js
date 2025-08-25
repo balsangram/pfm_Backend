@@ -16,7 +16,7 @@ const displayCoupons = asyncHandler(async (req, res) => {
 
 // Add a new coupon
 const addCoupons = asyncHandler(async (req, res) => {
-    let { name, code, img, discount, expiryDate, limit } = req.body;
+    let { name, code, img, discount, expiryDate, limit  } = req.body;
     console.log("🚀 ~ req.body:", req.body)
 
     if (!name || !discount || !limit || !expiryDate) {

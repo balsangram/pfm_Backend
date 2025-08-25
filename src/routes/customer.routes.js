@@ -69,5 +69,6 @@ router.get("/type-categories-all-card/:id", customerCategoriesController.typeCat
 router.get("/full-details-of-sub-categorie-card/:id", customerCategoriesController.fullDetailsOfSubCategorieCard)
 
 router.post("/search-item", customerCategoriesController.searchItem);
+router.get("/allCategories-search-bottom", customerCategoriesController.allSubCategories_bottom_search);
 
 export default router;

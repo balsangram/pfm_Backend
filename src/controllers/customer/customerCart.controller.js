@@ -7,7 +7,8 @@ import mongoose from "mongoose";
 import Store from "../../models/store/store.model.js";
 import Manager from "../../models/manager/manager.model.js"
 import { getNearestStore } from "../../utils/geo.js";
-import Order from "../../models/catalog/order.model.js"
+import Order from "../../models/catalog/order.model.js";
+import Coupons from "../../models/catalog/coupons.model.js";
 
 // ✅ Display Cart Details
 const displayCartDetails = asyncHandler(async (req, res) => {
@@ -411,7 +412,7 @@ export const createOrder = asyncHandler(async (req, res) => {
     console.log(req.body, "body");
 
     const { userId } = req.params;
-    const { location, phone, latitude, longitude, notes, isUrgent, pincode } = req.body;
+    const { location, phone, latitude, longitude, notes, isUrgent, pincode, walletPoint, couponsId } = req.body;
 
     // 1️⃣ Validate userId
     if (!userId || !mongoose.Types.ObjectId.isValid(userId)) {
@@ -477,6 +478,27 @@ export const createOrder = asyncHandler(async (req, res) => {
         price: item.subCategory.price,
     }));
     const totalAmount = orderItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
+    console.log("🚀 ~ totalAmount:", totalAmount)
+
+    console.log(couponsId, "couponsId");
+
+    const coupon = await Coupons.findById(couponsId);
+    console.log(walletPoint, "walletPoint");
+
+    console.log("🚀 ~ coupon:", coupon)
+    if (walletPoint > 0) {
+        console.log("------");
+
+        totalAmount = totalAmount - walletPoint;
+        console.log("🚀 ~ totalAmount:", totalAmount)
+    } else if (coupon) {
+        console.log("no coupon");
+
+    }
+
+    console.log("🚀 ~ totalAmount:", totalAmount)
+
+
 
     // 11️⃣ Create new order
     const newOrder = await Order.create({
