@@ -137,53 +137,88 @@ const addToCart = asyncHandler(async (req, res) => {
 // });
 
 // 🛒 Delete item from cart
+// const editToCart = asyncHandler(async (req, res) => {
+//     console.log("🚀 ~  req.body:", req.body)
+//     const { userId, itemId } = req.params;
+//     let { count } = req.body; // expects { "count": 3 }
+//     // console.log("🚀 ~ count:", count)
+
+//     // Validate IDs
+//     if (!mongoose.Types.ObjectId.isValid(userId) || !mongoose.Types.ObjectId.isValid(itemId)) {
+//         return res.status(400).json({ message: "Invalid ID format" });
+//     }
+
+//     // Ensure count is valid
+//     count = Number(count);
+//     // console.log("🚀 ~ count:", count)
+//     if (isNaN(count) || count <= 0) {
+//         return res.status(400).json({ message: "Count must be a valid number greater than 0" });
+//     }
+
+//     // Find customer
+//     const customer = await Customer.findById(userId);
+//     // console.log("🚀 ~ customer:", customer)
+//     if (!customer) {
+//         return res.status(404).json({ message: "Customer not found" });
+//     }
+
+//     // Find the order in customer's cart
+//     const order = customer.orders.find((order) => {
+//         // Ensure both IDs are strings for accurate comparison
+//         const orderId = order._id.toString();
+//         const paramId = String(itemId).trim();
+
+//         // console.log("🚀 ~ orderId:", orderId, "paramId:", paramId);
+//         order === paramId
+//         return order;
+//     });
+//     // console.log("🚀 ~ order:", order)
+
+//     // console.log(order, "🚀 ~ !order:", !order)
+//     if (!order) {
+//         return res.status(404).json({ message: "Item not found in cart" });
+//     }
+
+
+//     // ✅ Update only the count
+//     order.count = count;
+//     // console.log("🚀 ~ order:", order)
+//     // console.log(customer, "customer----------------");
+
+//     await customer.save();
+
+//     res.status(200).json({
+//         message: "Cart item count updated successfully",
+//         updatedItem: order,
+//     });
+// });
+
 const editToCart = asyncHandler(async (req, res) => {
-    console.log("🚀 ~  req.body:", req.body)
     const { userId, itemId } = req.params;
     let { count } = req.body; // expects { "count": 3 }
-    console.log("🚀 ~ count:", count)
 
-    // Validate IDs
     if (!mongoose.Types.ObjectId.isValid(userId) || !mongoose.Types.ObjectId.isValid(itemId)) {
         return res.status(400).json({ message: "Invalid ID format" });
     }
 
-    // Ensure count is valid
     count = Number(count);
-    console.log("🚀 ~ count:", count)
     if (isNaN(count) || count <= 0) {
         return res.status(400).json({ message: "Count must be a valid number greater than 0" });
     }
 
-    // Find customer
     const customer = await Customer.findById(userId);
-    console.log("🚀 ~ customer:", customer)
     if (!customer) {
         return res.status(404).json({ message: "Customer not found" });
     }
 
-    // Find the order in customer's cart
-    const order = customer.orders.find((order) => {
-        // Ensure both IDs are strings for accurate comparison
-        const orderId = order._id.toString();
-        const paramId = String(itemId).trim();
+    // ✅ Corrected find
+    const order = customer.orders.find((order) => order._id.toString() === String(itemId).trim());
 
-        console.log("🚀 ~ orderId:", orderId, "paramId:", paramId);
-        order === paramId
-        return order;
-    });
-    console.log("🚀 ~ order:", order)
-
-    console.log(order, "🚀 ~ !order:", !order)
     if (!order) {
         return res.status(404).json({ message: "Item not found in cart" });
     }
 
-
-    // ✅ Update only the count
     order.count = count;
-    console.log("🚀 ~ order:", order)
-    console.log(customer, "customer----------------");
 
     await customer.save();
 
@@ -192,6 +227,7 @@ const editToCart = asyncHandler(async (req, res) => {
         updatedItem: order,
     });
 });
+
 
 const deleteToCart = asyncHandler(async (req, res) => {
     const { userId, itemId } = req.params;
@@ -203,10 +239,11 @@ const deleteToCart = asyncHandler(async (req, res) => {
     }
 
     // 🔎 Find item index by order._id
+    const trimmedItemId = String(itemId).trim();
     const orderIndex = customer.orders.findIndex(
-        (order) => order._id.toString() === itemId
+        (order) => order._id.toString() === trimmedItemId
     );
-    console.log("🚀 ~ orderIndex:", orderIndex)
+    console.log("🚀 ~ orderIndex:", orderIndex);
 
     if (orderIndex === -1) {
         throw new ApiError(404, "Item not found in cart");
@@ -217,10 +254,16 @@ const deleteToCart = asyncHandler(async (req, res) => {
 
     await customer.save();
 
-    return res
-        .status(200)
-        .json(new ApiResponse(200, customer.orders, "Item deleted from cart successfully"));
+    // Return updated cart and optionally count
+    return res.status(200).json(
+        new ApiResponse(
+            200,
+            { orders: customer.orders, totalItems: customer.orders.length },
+            "Item deleted from cart successfully"
+        )
+    );
 });
+
 
 // order
 
