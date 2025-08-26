@@ -5,8 +5,8 @@ const managerSchema = new mongoose.Schema({
         type: String,
         required: true,
         trim: true,
-        minlength: 2,
-        maxlength: 50
+        // minlength: 2,
+        // maxlength: 50
     },
     img: {
         type: String,
@@ -15,16 +15,10 @@ const managerSchema = new mongoose.Schema({
         type: String,
         required: true,
         trim: true,
-        minlength: 2,
-        maxlength: 50
+        // minlength: 2,
+        // maxlength: 50
     },
-    email: {
-        type: String,
-        // required: true,
-        unique: true,
-        trim: true,
-        lowercase: true
-    },
+
     phone: {
         type: String,
         required: true,
@@ -35,22 +29,20 @@ const managerSchema = new mongoose.Schema({
         type: String,
         required: true,
         trim: true,
-        minlength: 5,
-        maxlength: 200
+        // minlength: 5,
+        // maxlength: 200
     },
     storeName: {
         type: String,
         required: true,
         trim: true,
-        minlength: 3,
-        maxlength: 100
+        // minlength: 3,
+        // maxlength: 100
     },
     storeLocation: {
         type: String,
         required: true,
-        trim: true,
-        minlength: 10,
-        maxlength: 300
+        // minlength: 3  // or remove this if not needed
     },
     lat: {
         type: Number,
@@ -91,8 +83,6 @@ const managerSchema = new mongoose.Schema({
 
 // Index for better query performance
 managerSchema.index({ phone: 1 });
-// managerSchema.index({ email: 1 });
-// managerSchema.index({ store: 1 });
 managerSchema.index({ pincode: 1 });
 // managerSchema.index({ isActive: 1 });
 

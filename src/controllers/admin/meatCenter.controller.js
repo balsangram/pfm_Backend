@@ -7,7 +7,7 @@ import Manager from '../../models/manager/manager.model.js';
 // Get all meat centers
 export const getMeatCenters = asyncHandler(async (req, res) => {
     const stores = await Store.find({ isActive: true })
-        .populate('manager', 'firstName lastName phone email pincode')
+        .populate('manager', 'firstName lastName phone pincode')
         .select('-__v');
     console.log("🚀 ~ stores:", stores)
 
@@ -17,76 +17,142 @@ export const getMeatCenters = asyncHandler(async (req, res) => {
 });
 
 // Create a new meat center with manager
+// export const createMeatCenter = asyncHandler(async (req, res) => {
+//     const {
+//         storeName,
+//         location,
+//         managerPhone,
+//         storePhone, // Add separate store phone field
+//         managerFirstName,
+//         managerLastName,
+//         // managerEmail,
+//         latitude,
+//         longitude,
+//         pincode,
+//         products
+//     } = req.body;
+
+//     // Check if manager with this phone already exists
+//     const existingManager = await Manager.findOne({ phone: managerPhone });
+//     if (existingManager) {
+//         throw new ApiError(409, "Manager with this phone number already exists");
+//     }
+
+//     // Check if store with this phone already exists
+//     const existingStore = await Store.findOne({ phone: storePhone });
+//     if (existingStore) {
+//         throw new ApiError(409, "Store with this phone number already exists");
+//     }
+
+//     // Check if store with this name already exists
+//     // const existingStore = await Store.findOne({ name: storeName });
+//     // if (existingStore) {
+//     //     throw new ApiError(409, "Store with this name already exists");
+//     // }
+
+//     // Create store first
+//     const store = await Store.create({
+//         name: storeName,
+//         location: location,
+//         phone: storePhone, // Use the provided store phone directly
+//         lat: parseFloat(latitude),
+//         long: parseFloat(longitude),
+//         pincode: pincode,
+//         products: products,
+//         isActive: true
+//     });
+//     console.log("🚀 ~ store:", store)
+
+//     // Create manager linked to the store
+//     const manager = await Manager.create({
+//         firstName: managerFirstName,
+//         lastName: managerLastName,
+//         // email: managerEmail,
+//         phone: managerPhone,
+//         location: location,
+//         storeName: storeName,
+//         storeLocation: location,
+//         lat: parseFloat(latitude),
+//         long: parseFloat(longitude),
+//         pincode: pincode,
+//         store: store._id
+//     });
+//     console.log("🚀 ~ manager:", manager)
+
+//     // Update store with manager reference
+//     store.manager = manager._id;
+//     await store.save();
+
+//     // Populate manager details for response
+//     const populatedStore = await Store.findById(store._id)
+//         .populate('manager', 'firstName lastName phone ')
+//         .select('-__v');
+
+//     return res.status(201).json(
+//         new ApiResponse(201, populatedStore, "Meat center created successfully with manager")
+//     );
+// });
+
 export const createMeatCenter = asyncHandler(async (req, res) => {
     const {
         storeName,
         location,
         managerPhone,
-        storePhone, // Add separate store phone field
+        storePhone,
         managerFirstName,
         managerLastName,
-        managerEmail,
         latitude,
         longitude,
         pincode,
         products
     } = req.body;
 
-    // Check if manager with this phone already exists
+    // 🔍 Check if manager with this phone already exists
     const existingManager = await Manager.findOne({ phone: managerPhone });
     if (existingManager) {
         throw new ApiError(409, "Manager with this phone number already exists");
     }
 
-    // Check if store with this phone already exists
+    // 🔍 Check if store with this phone already exists
     const existingStore = await Store.findOne({ phone: storePhone });
     if (existingStore) {
         throw new ApiError(409, "Store with this phone number already exists");
     }
 
-    // Check if store with this name already exists
-    // const existingStore = await Store.findOne({ name: storeName });
-    // if (existingStore) {
-    //     throw new ApiError(409, "Store with this name already exists");
-    // }
-
-    // Create store first
+    // 🏬 Create store first
     const store = await Store.create({
         name: storeName,
-        location: location,
-        phone: storePhone, // Use the provided store phone directly
+        location,
+        phone: storePhone,
         lat: parseFloat(latitude),
         long: parseFloat(longitude),
-        pincode: pincode,
-        products: products,
+        pincode,
+        products,
         isActive: true
     });
-    console.log("🚀 ~ store:", store)
 
-    // Create manager linked to the store
+    // 👨‍💼 Create manager linked to the store
     const manager = await Manager.create({
         firstName: managerFirstName,
         lastName: managerLastName,
-        email: managerEmail,
         phone: managerPhone,
-        location: location,
-        storeName: storeName,
+        location,
+        storeName,
         storeLocation: location,
         lat: parseFloat(latitude),
         long: parseFloat(longitude),
-        pincode: pincode,
+        pincode,
         store: store._id
     });
-    console.log("🚀 ~ manager:", manager)
 
-    // Update store with manager reference
+    // 🔄 Update store with manager reference
     store.manager = manager._id;
     await store.save();
 
-    // Populate manager details for response
+    // 📦 Populate manager details for response
     const populatedStore = await Store.findById(store._id)
-        .populate('manager', 'firstName lastName phone email')
-        .select('-__v');
+        .populate("manager", "firstName lastName phone")
+        .select("-__v");
 
     return res.status(201).json(
         new ApiResponse(201, populatedStore, "Meat center created successfully with manager")
@@ -117,6 +183,7 @@ export const createMeatCenter = asyncHandler(async (req, res) => {
 
 const updateMeatCenter = asyncHandler(async (req, res) => {
     const { id } = req.params;
+    console.log("🚀 ~  req.params:",  req.params)
     const {
         storeName,
         location,
@@ -130,6 +197,7 @@ const updateMeatCenter = asyncHandler(async (req, res) => {
         pincode,
         products
     } = req.body;
+    console.log("🚀 ~ req.body:", req.body)
 
     // Find the store
     const store = await Store.findById(id).populate("manager");
@@ -178,7 +246,6 @@ const updateMeatCenter = asyncHandler(async (req, res) => {
         if (manager) {
             manager.firstName = managerFirstName || manager.firstName;
             manager.lastName = managerLastName || manager.lastName;
-            manager.email = managerEmail || manager.email;
             manager.phone = managerPhone || manager.phone;
             manager.location = location || manager.location;
             manager.storeName = storeName || manager.storeName;
@@ -193,8 +260,9 @@ const updateMeatCenter = asyncHandler(async (req, res) => {
 
     // ✅ Populate for response
     const updatedStore = await Store.findById(store._id)
-        .populate("manager", "firstName lastName phone email")
+        .populate("manager", "firstName lastName phone ")
         .select("-__v");
+    console.log("🚀 ~ updatedStore:", updatedStore)
 
     return res.status(200).json(
         new ApiResponse(200, updatedStore, "Meat center updated successfully with manager")
@@ -271,7 +339,7 @@ export const updateStorePhoneNumbers = asyncHandler(async (req, res) => {
         }
 
         return res.status(200).json(
-            new ApiResponse(200, { updated: updatedCount, total: storesToUpdate.length }, 
+            new ApiResponse(200, { updated: updatedCount, total: storesToUpdate.length },
                 `Updated ${updatedCount} stores with 'S' prefix phone numbers`)
         );
     } catch (error) {
