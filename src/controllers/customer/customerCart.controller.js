@@ -236,8 +236,51 @@ const editToCart = asyncHandler(async (req, res) => {
 // });
 
 
+// const deleteToCart = asyncHandler(async (req, res) => {
+//     const { userId, itemId } = req.params;
+//     console.log("🚀 ~ req.params:", req.params)
+
+//     // 🔑 Find the customer
+//     const customer = await Customer.findById(userId);
+//     console.log("🚀 ~ customer:", customer)
+//     if (!customer) {
+//         throw new ApiError(404, "Customer not found");
+//     }
+
+//     // 🔎 Find item index by order._id
+//     const trimmedItemId = String(itemId).trim();
+//     console.log("🚀 ~ trimmedItemId:", trimmedItemId)
+//     const orderIndex = customer.SubCategory.findIndex(
+//         (order) => {
+//     console.log("🚀 ~ order:", order)
+//     return order._id.toString() === trimmedItemId;
+// }
+//     );
+//     console.log("🚀 ~ orderIndex:", orderIndex);
+
+//     if (orderIndex === -1) {
+//         throw new ApiError(404, "Item not found in cart");
+//     }
+
+//     // 🗑 Remove the item
+//     customer.orders.splice(orderIndex, 1);
+//     console.log("🚀 ~ customer:", customer)
+
+//     await customer.save();
+
+//     // Return updated cart and optionally count
+//     return res.status(200).json(
+//         new ApiResponse(
+//             200,
+//             // { orders: customer.orders, totalItems: customer.orders.length },
+//             "Item deleted from cart successfully"
+//         )
+//     );
+// });
+
 const deleteToCart = asyncHandler(async (req, res) => {
-    const { userId, itemId } = req.params;
+    const { userId, itemId } = req.params; // itemId = subCategoryId
+    console.log("🚀 ~ req.params:", req.params);
 
     // 🔑 Find the customer
     const customer = await Customer.findById(userId);
@@ -245,10 +288,10 @@ const deleteToCart = asyncHandler(async (req, res) => {
         throw new ApiError(404, "Customer not found");
     }
 
-    // 🔎 Find item index by order._id
+    // 🔎 Find item index by subCategory._id
     const trimmedItemId = String(itemId).trim();
     const orderIndex = customer.orders.findIndex(
-        (order) => order._id.toString() === trimmedItemId
+        (order) => order.subCategory.toString() === trimmedItemId
     );
     console.log("🚀 ~ orderIndex:", orderIndex);
 
@@ -261,15 +304,63 @@ const deleteToCart = asyncHandler(async (req, res) => {
 
     await customer.save();
 
-    // Return updated cart and optionally count
+    // 📊 Return updated cart
     return res.status(200).json(
         new ApiResponse(
             200,
-            { orders: customer.orders, totalItems: customer.orders.length },
+            {
+                orders: customer.orders,
+                totalItems: customer.orders.reduce((sum, o) => sum + o.count, 0),
+            },
             "Item deleted from cart successfully"
         )
     );
 });
+
+
+// const deleteToCart = asyncHandler(async (req, res) => {
+//     const { userId, itemId } = req.params; // itemId = subCategoryId
+//     console.log("🚀 ~ req.params:", req.params);
+
+//     // 🔑 Find the customer
+//     const customer = await Customer.findById(userId).populate("orders.subCategory");
+//     console.log("🚀 ~ customer:", customer)
+//     if (!customer) {
+//         throw new ApiError(404, "Customer not found");
+//     }
+
+//     // 🔎 Find item index by subCategory._id
+//     const trimmedItemId = String(itemId).trim();
+//     const orderIndex = customer.orders.findIndex(
+//         (order) => order.subCategory.toString() === trimmedItemId
+//     );
+
+//     console.log("🚀 ~ orderIndex:", orderIndex);
+
+//     if (orderIndex === -1) {
+//         throw new ApiError(404, "Item not found in cart");
+//     }
+
+//     // 🗑 Remove the item from orders
+//     customer.orders.splice(orderIndex, 1);
+//     await customer.save();
+
+//     // 📊 Recalculate cart summary
+//     const totalItems = customer.orders.reduce((acc, item) => acc + item.count, 0);
+//     const totalDiscountPrice = customer.orders.reduce(
+//         (acc, item) => acc + item.count * (item.subCategory?.discountPrice || 0),
+//         0
+//     );
+
+//     return res.status(200).json(
+//         new ApiResponse(
+//             200,
+//             customer.orders,
+//             "Item deleted from cart successfully",
+//             { totalItems, totalDiscountPrice }
+//         )
+//     );
+// });
 
 
 // order
