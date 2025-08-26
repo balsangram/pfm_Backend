@@ -783,11 +783,14 @@ const totalProductAmount = asyncHandler(async (req, res) => {
         totalAmount += price * quantity;
     });
 
-    res.json({
-        success: true,
-        totalCount,
-        totalAmount,
-    });
+
+
+    return res
+        .status(200)
+        .json(new ApiResponse(200,
+            totalCount,
+            totalAmount, "Order history fetched successfully"));
+
 });
 
 
