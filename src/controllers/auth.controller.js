@@ -687,7 +687,7 @@ export const managerRefreshToken = asyncHandler(async (req, res) => {
 export const storeSendOtp = asyncHandler(async (req, res) => {
     const { phone } = req.body;
 
-    // check store exists
+    // Check if store exists with this phone number
     const store = await Store.findOne({ phone: phone });
     if (!store) {
         return res
@@ -738,7 +738,9 @@ export const storeVerifyLogin = asyncHandler(async (req, res) => {
     }
 
     // OTP is valid, proceed with login
+    // Find store by the phone number
     const store = await Store.findOne({ phone });
+    
     console.log("🚀 ~ store:", store)
     if (!store) {
         return res

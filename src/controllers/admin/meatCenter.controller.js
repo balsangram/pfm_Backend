@@ -22,6 +22,7 @@ export const createMeatCenter = asyncHandler(async (req, res) => {
         storeName,
         location,
         managerPhone,
+        storePhone, // Add separate store phone field
         managerFirstName,
         managerLastName,
         managerEmail,
@@ -37,6 +38,12 @@ export const createMeatCenter = asyncHandler(async (req, res) => {
         throw new ApiError(409, "Manager with this phone number already exists");
     }
 
+    // Check if store with this phone already exists
+    const existingStore = await Store.findOne({ phone: storePhone });
+    if (existingStore) {
+        throw new ApiError(409, "Store with this phone number already exists");
+    }
+
     // Check if store with this name already exists
     // const existingStore = await Store.findOne({ name: storeName });
     // if (existingStore) {
@@ -47,7 +54,7 @@ export const createMeatCenter = asyncHandler(async (req, res) => {
     const store = await Store.create({
         name: storeName,
         location: location,
-        phone: managerPhone, // ensure phone is set to avoid unique null duplication
+        phone: storePhone, // Use the provided store phone directly
         lat: parseFloat(latitude),
         long: parseFloat(longitude),
         pincode: pincode,
@@ -114,6 +121,7 @@ const updateMeatCenter = asyncHandler(async (req, res) => {
         storeName,
         location,
         managerPhone,
+        storePhone, // Add separate store phone field
         managerFirstName,
         managerLastName,
         managerEmail,
@@ -145,10 +153,18 @@ const updateMeatCenter = asyncHandler(async (req, res) => {
         }
     }
 
+    // ✅ Check if another store with same phone exists
+    if (storePhone && store.phone !== storePhone) {
+        const existingStore = await Store.findOne({ phone: storePhone, _id: { $ne: id } });
+        if (existingStore) {
+            throw new ApiError(409, "Another store with this phone number already exists");
+        }
+    }
+
     // ✅ Update store fields
     store.name = storeName || store.name;
     store.location = location || store.location;
-    store.phone = managerPhone || store.phone;
+    store.phone = storePhone || store.phone; // Use the provided store phone
     store.lat = latitude ? parseFloat(latitude) : store.lat;
     store.long = longitude ? parseFloat(longitude) : store.long;
     store.pincode = pincode || store.pincode;
@@ -229,10 +245,48 @@ export const displayAllStoreName = asyncHandler(async (req, res) => {
     }
 });
 
+// Update existing stores to have 'S' prefix phone numbers
+export const updateStorePhoneNumbers = asyncHandler(async (req, res) => {
+    try {
+        // Find all stores that don't have 'S' prefix
+        const storesToUpdate = await Store.find({
+            phone: { $exists: true, $ne: null },
+            $not: { phone: /^S/ }
+        });
+
+        if (storesToUpdate.length === 0) {
+            return res.status(200).json(
+                new ApiResponse(200, { updated: 0 }, "All stores already have correct phone format")
+            );
+        }
+
+        // Update each store
+        let updatedCount = 0;
+        for (const store of storesToUpdate) {
+            if (store.phone && !store.phone.startsWith('S')) {
+                store.phone = `S${store.phone}`;
+                await store.save();
+                updatedCount++;
+            }
+        }
+
+        return res.status(200).json(
+            new ApiResponse(200, { updated: updatedCount, total: storesToUpdate.length }, 
+                `Updated ${updatedCount} stores with 'S' prefix phone numbers`)
+        );
+    } catch (error) {
+        console.error("Error updating store phone numbers:", error);
+        return res.status(500).json(
+            new ApiResponse(500, null, "Failed to update store phone numbers")
+        );
+    }
+});
+
 export const MeatCenterController = {
     getMeatCenters,
     createMeatCenter,
     updateMeatCenter,
     deleteMeatCenter,
-    displayAllStoreName
+    displayAllStoreName,
+    updateStorePhoneNumbers
 };

@@ -51,6 +51,9 @@ router.delete("/meat-centers/:id", MeatCenterController.deleteMeatCenter);
 
 router.get("/all-store-name", MeatCenterController.displayAllStoreName);
 
+// Update existing stores with 'S' prefix phone numbers
+router.post("/meat-centers/update-phone-numbers", MeatCenterController.updateStorePhoneNumbers);
+
 // Delivery Partner
 router.get("/delivery-partners", DeliveryPartnerController.getAllDeliveryPartners);
 router.get("/delivery-partners/:id", DeliveryPartnerController.getDeliveryPartnerById);

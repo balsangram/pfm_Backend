@@ -29,6 +29,13 @@ export const createMeatCenterSchema = Joi.object({
             'string.pattern.base': 'Please provide a valid phone number (10-15 digits)',
             'any.required': 'Manager phone number is required'
         }),
+    storePhone: Joi.string()
+        .pattern(/^[0-9]{10,15}$/)
+        .required()
+        .messages({
+            'string.pattern.base': 'Please provide a valid phone number (10-15 digits)',
+            'any.required': 'Store phone number is required'
+        }),
     managerFirstName: Joi.string()
         .min(2)
         .max(50)
@@ -97,6 +104,40 @@ export const updateMeatCenterSchema = Joi.object({
         .messages({
             'string.min': 'Location must be at least 5 characters long',
             'string.max': 'Location cannot exceed 300 characters'
+        }),
+    managerPhone: Joi.string()
+        .pattern(/^[0-9]{10,15}$/)
+        .messages({
+            'string.pattern.base': 'Please provide a valid phone number (10-15 digits)'
+        }),
+    storePhone: Joi.string()
+        .pattern(/^[0-9]{10,15}$/)
+        .messages({
+            'string.pattern.base': 'Please provide a valid phone number (10-15 digits)'
+        }),
+    managerFirstName: Joi.string()
+        .min(2)
+        .max(50)
+        .messages({
+            'string.min': 'Manager first name must be at least 2 characters long',
+            'string.max': 'Manager first name cannot exceed 50 characters'
+        }),
+    managerLastName: Joi.string()
+        .min(2)
+        .max(50)
+        .messages({
+            'string.min': 'Manager last name must be at least 2 characters long',
+            'string.max': 'Manager last name cannot exceed 50 characters'
+        }),
+    managerEmail: Joi.string()
+        .email()
+        .messages({
+            'string.email': 'Please provide a valid email address'
+        }),
+    pincode: Joi.string()
+        .pattern(/^[0-9]{6}$/)
+        .messages({
+            'string.pattern.base': 'Please provide a valid 6-digit pincode'
         }),
     latitude: Joi.string()
         .pattern(/^-?([1-8]?[0-9](\.[0-9]+)?|90(\.0+)?)$/)
