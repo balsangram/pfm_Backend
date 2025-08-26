@@ -10,12 +10,12 @@ import {
     getOrderById,
     updateOrderStatus,
     getDeliveryPartners,
-    createDeliveryPartner,
-    updateDeliveryPartner,
-    deleteDeliveryPartner,
     getStoreDetails,
     updateStoreDetails,
-    getDashboardStats
+    getDashboardStats,
+    getOrderManagementStats,
+    getDeliveryPartnerById,
+    migrateDeliveryPartners
 } from "../controllers/manager/manager.controller.js";
 import {
     getLiveOrders,
@@ -26,6 +26,10 @@ import {
 } from "../controllers/manager/liveOrders.controller.js";
 // Add shared delivery partner management handlers for document verification
 import {
+    createDeliveryPartner,
+    updateDeliveryPartner,
+    deleteDeliveryPartner,
+    hardDeleteDeliveryPartner,
     updateDocumentVerificationStatus,
     bulkUpdateDocumentVerification
 } from "../controllers/shared/deliveryPartnerManagement.controller.js";
@@ -102,6 +106,7 @@ router.get("/orders",
     validateRequest(orderFilterSchema, 'query'),
     getOrders
 );
+router.get("/orders/stats", getOrderManagementStats);
 router.get("/orders/:id", 
     validateRequest(idParamSchema, 'params'),
     getOrderById
@@ -117,6 +122,10 @@ router.get("/delivery-partners",
     validateRequest(orderFilterSchema, 'query'), // Reusing orderFilterSchema for pagination
     getDeliveryPartners
 );
+router.get("/delivery-partners/:id", 
+    validateRequest(idParamSchema, 'params'),
+    getDeliveryPartnerById
+);
 router.post("/delivery-partners", 
     validateRequest(createDeliveryPartnerSchema, 'body'),
     createDeliveryPartner
@@ -130,6 +139,15 @@ router.delete("/delivery-partners/:id",
     validateRequest(idParamSchema, 'params'),
     deleteDeliveryPartner
 );
+
+// Hard delete endpoint
+router.delete("/delivery-partners/:id/hard", 
+    validateRequest(idParamSchema, 'params'),
+    hardDeleteDeliveryPartner
+);
+
+// Migration endpoint to update existing delivery partners with store field
+router.post("/delivery-partners/migrate", migrateDeliveryPartners);
 
 // Document Verification Management (Manager/Admin)
 router.patch("/delivery-partners/:id/documents",

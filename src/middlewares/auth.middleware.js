@@ -39,7 +39,7 @@ export const verifyJWT = asyncHandler(async (req, res, next) => {
     }
 
     const { userId, role } = decoded; // We assume we stored userId + role in token
-    // console.log( 'kk',userId, role );
+    console.log('🔍 verifyJWT: Token decoded:', { userId, role });
 
     // Find user in the relevant model
     let user;
@@ -62,6 +62,12 @@ export const verifyJWT = asyncHandler(async (req, res, next) => {
     // Attach user + role to request
     req.user = user;
     req.userRole = role;
+    
+    console.log('🔍 verifyJWT: User attached to request:', {
+        userId: user._id,
+        userRole: req.userRole,
+        role: role
+    });
 
     return next();
 });
@@ -73,9 +79,19 @@ export const verifyJWT = asyncHandler(async (req, res, next) => {
  */
 export const verifyRole = (...allowedRoles) => {
     return (req, res, next) => {
+        console.log('🔍 verifyRole: Checking role permissions:', {
+            allowedRoles,
+            userRole: req.userRole,
+            hasUser: !!req.user,
+            userKeys: req.user ? Object.keys(req.user) : 'No user'
+        });
+        
         if (!req.user || !allowedRoles.includes(req.userRole)) {
+            console.log('❌ verifyRole: Access denied - insufficient permissions');
             throw new ApiError(403, "Forbidden: Insufficient permissions");
         }
+        
+        console.log('✅ verifyRole: Access granted for role:', req.userRole);
         next();
     };
 };

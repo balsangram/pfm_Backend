@@ -149,28 +149,28 @@ export const updateOrderStatusSchema = Joi.object({
 });
 
 export const orderFilterSchema = Joi.object({
-    status: Joi.string().valid('pending', 'confirmed', 'preparing', 'ready', 'picked_up', 'in_transit', 'delivered', 'cancelled').optional(),
-    dateFrom: Joi.date().iso().optional().messages({
+    status: Joi.string().valid('pending', 'confirmed', 'preparing', 'ready', 'picked_up', 'in_transit', 'delivered', 'cancelled').optional().allow(''),
+    dateFrom: Joi.date().iso().optional().allow('').messages({
         'date.format': 'Date must be in ISO format (YYYY-MM-DD)'
     }),
-    dateTo: Joi.date().iso().min(Joi.ref('dateFrom')).optional().messages({
+    dateTo: Joi.date().iso().min(Joi.ref('dateFrom')).optional().allow('').messages({
         'date.min': 'End date must be after start date'
     }),
-    search: Joi.string().max(100).optional().messages({
+    search: Joi.string().max(100).optional().allow('').messages({
         'string.max': 'Search term cannot exceed 100 characters'
     }),
-    page: Joi.number().integer().min(1).default(1).optional().messages({
+    page: Joi.number().integer().min(1).default(1).optional().allow('').messages({
         'number.base': 'Page must be a number',
         'number.integer': 'Page must be an integer',
         'number.min': 'Page must be at least 1'
     }),
-    limit: Joi.number().integer().min(1).max(100).default(10).optional().messages({
+    limit: Joi.number().integer().min(1).max(100).default(10).optional().allow('').messages({
         'number.base': 'Limit must be a number',
         'number.integer': 'Limit must be an integer',
         'number.min': 'Limit must be at least 1',
         'number.max': 'Limit cannot exceed 100'
     })
-});
+}).unknown(true); // Allow unknown query parameters
 
 // Store Management Validation Schemas
 export const updateStoreSchema = Joi.object({

@@ -74,7 +74,24 @@ export const changeManagerPassword = asyncHandler(async (req, res) => {
 
 // Order Management
 export const getOrders = asyncHandler(async (req, res) => {
+    console.log('🔍 getOrders: Starting order retrieval...');
+    console.log('🔍 getOrders: Request user:', req.user);
+    console.log('🔍 getOrders: Request query:', req.query);
+    
     const managerId = req.user._id;
+    console.log('🔍 getOrders: Manager ID:', managerId);
+    
+    // Get the manager's store ID
+    const manager = await Manager.findById(managerId).select('store');
+    console.log('🔍 getOrders: Manager found:', manager);
+    
+    if (!manager || !manager.store) {
+        console.log('❌ getOrders: Manager or store not found');
+        throw new ApiError(404, "Manager's store not found");
+    }
+    
+    console.log('🔍 getOrders: Store ID:', manager.store);
+    
     const {
         status,
         dateFrom,
@@ -84,8 +101,10 @@ export const getOrders = asyncHandler(async (req, res) => {
         limit = 10
     } = req.query;
     
-    // Build filter object
-    const filter = { manager: managerId };
+    console.log('🔍 getOrders: Query parameters:', { status, dateFrom, dateTo, search, page, limit });
+    
+    // Build filter object - filter by store instead of manager to get all orders for the store
+    const filter = { store: manager.store };
     
     if (status) {
         filter.status = status;
@@ -109,19 +128,26 @@ export const getOrders = asyncHandler(async (req, res) => {
         }
     }
     
+    console.log('🔍 getOrders: Final filter:', JSON.stringify(filter, null, 2));
+    
     // Calculate pagination
     const skip = (parseInt(page) - 1) * parseInt(limit);
     
     const orders = await Order.find(filter)
         .populate('deliveryPartner', 'name phone')
+        .populate('manager', 'firstName lastName phone')
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(parseInt(limit))
         .select('-__v');
     
+    console.log('🔍 getOrders: Orders found:', orders.length);
+    
     const totalOrders = await Order.countDocuments(filter);
     
     const totalPages = Math.ceil(totalOrders / parseInt(limit));
+    
+    console.log('✅ getOrders: Successfully retrieved orders');
     
     return res.status(200).json(
         new ApiResponse(200, {
@@ -141,9 +167,16 @@ export const getOrderById = asyncHandler(async (req, res) => {
     const { id } = req.params;
     const managerId = req.user._id;
     
-    const order = await Order.findOne({ _id: id, manager: managerId })
+    // Get the manager's store ID
+    const manager = await Manager.findById(managerId).select('store');
+    if (!manager || !manager.store) {
+        throw new ApiError(404, "Manager's store not found");
+    }
+    
+    const order = await Order.findOne({ _id: id, store: manager.store })
         .populate('deliveryPartner', 'name phone')
         .populate('store', 'name location phone')
+        .populate('manager', 'firstName lastName phone')
         .select('-__v');
     
     if (!order) {
@@ -160,7 +193,13 @@ export const updateOrderStatus = asyncHandler(async (req, res) => {
     const managerId = req.user._id;
     const { status, pickedUpBy, notes } = req.body;
     
-    const order = await Order.findOne({ _id: id, manager: managerId });
+    // Get the manager's store ID
+    const manager = await Manager.findById(managerId).select('store');
+    if (!manager || !manager.store) {
+        throw new ApiError(404, "Manager's store not found");
+    }
+    
+    const order = await Order.findOne({ _id: id, store: manager.store });
     if (!order) {
         throw new ApiError(404, "Order not found");
     }
@@ -186,35 +225,127 @@ export const updateOrderStatus = asyncHandler(async (req, res) => {
     );
 });
 
+// Migration function to update existing delivery partners with store field
+export const migrateDeliveryPartners = asyncHandler(async (req, res) => {
+    const managerId = req.user._id;
+    
+    // Get the manager's store ID
+    const manager = await Manager.findById(managerId).select('store');
+    if (!manager || !manager.store) {
+        throw new ApiError(404, "Manager's store not found");
+    }
+    
+    // Find delivery partners that don't have a store field but have orders from this store
+    const deliveryPartnersToUpdate = await Order.aggregate([
+        {
+            $match: {
+                store: manager.store,
+                deliveryPartner: { $exists: true, $ne: null }
+            }
+        },
+        {
+            $group: {
+                _id: '$deliveryPartner',
+                orderCount: { $sum: 1 }
+            }
+        }
+    ]);
+    
+    if (deliveryPartnersToUpdate.length === 0) {
+        return res.status(200).json(
+            new ApiResponse(200, { updated: 0 }, "No delivery partners need migration")
+        );
+    }
+    
+    // Update delivery partners with store field
+    const deliveryPartnerIds = deliveryPartnersToUpdate.map(dp => dp._id);
+    const updateResult = await DeliveryPartner.updateMany(
+        { 
+            _id: { $in: deliveryPartnerIds },
+            $or: [
+                { store: { $exists: false } },
+                { store: null }
+            ]
+        },
+        { $set: { store: manager.store } }
+    );
+    
+    return res.status(200).json(
+        new ApiResponse(200, { 
+            updated: updateResult.modifiedCount,
+            total: deliveryPartnersToUpdate.length
+        }, `Migration completed. ${updateResult.modifiedCount} delivery partners updated.`)
+    );
+});
+
 // Delivery Partner Management
 export const getDeliveryPartners = asyncHandler(async (req, res) => {
     const managerId = req.user._id;
     const { status, search, page = 1, limit = 10 } = req.query;
     
-    // Build filter object
-    const filter = { isActive: true };
+    // Get the manager's store ID first
+    const manager = await Manager.findById(managerId).select('store');
+    if (!manager || !manager.store) {
+        throw new ApiError(404, "Manager's store not found");
+    }
     
+    // Use aggregation to find delivery partners for this store
+    // This handles both direct store association and delivery partners with orders from this store
+    const pipeline = [
+        {
+            $match: {
+                isActive: true,
+                $or: [
+                    { store: manager.store }, // Direct store association
+                    { 
+                        // Delivery partners with orders from this store
+                        _id: {
+                            $in: await Order.distinct('deliveryPartner', { 
+                                store: manager.store,
+                                deliveryPartner: { $exists: true, $ne: null }
+                            })
+                        }
+                    }
+                ]
+            }
+        }
+    ];
+    
+    // Add status filter if specified
     if (status) {
-        filter.status = status;
+        pipeline[0].$match.status = status;
     }
     
+    // Add search filter if specified
     if (search) {
-        filter.$or = [
-            { name: { $regex: search, $options: 'i' } },
-            { phone: { $regex: search, $options: 'i' } }
-        ];
+        pipeline[0].$match.$and = [{
+            $or: [
+                { name: { $regex: search, $options: 'i' } },
+                { phone: { $regex: search, $options: 'i' } }
+            ]
+        }];
     }
     
-    // Calculate pagination
-    const skip = (parseInt(page) - 1) * parseInt(limit);
+    // Add sorting and pagination
+    pipeline.push(
+        { $sort: { createdAt: -1 } },
+        { $skip: (parseInt(page) - 1) * parseInt(limit) },
+        { $limit: parseInt(limit) },
+        { $project: { __v: 0 } }
+    );
     
-    const deliveryPartners = await DeliveryPartner.find(filter)
-        .sort({ createdAt: -1 })
-        .skip(skip)
-        .limit(parseInt(limit))
-        .select('-__v');
+    // Get total count for pagination
+    const countPipeline = [
+        ...pipeline.slice(0, -3), // Remove sorting, skip, limit, and project
+        { $count: "total" }
+    ];
     
-    const totalPartners = await DeliveryPartner.countDocuments(filter);
+    const [deliveryPartners, countResult] = await Promise.all([
+        DeliveryPartner.aggregate(pipeline),
+        DeliveryPartner.aggregate(countPipeline)
+    ]);
+    
+    const totalPartners = countResult[0]?.total || 0;
     const totalPages = Math.ceil(totalPartners / parseInt(limit));
     
     return res.status(200).json(
@@ -231,74 +362,23 @@ export const getDeliveryPartners = asyncHandler(async (req, res) => {
     );
 });
 
-export const createDeliveryPartner = asyncHandler(async (req, res) => {
-    const { name, phoneNumber, status } = req.body;
-    
-    // Check if delivery partner already exists with the same phone
-    const existingPartner = await DeliveryPartner.findOne({ phone: phoneNumber });
-    if (existingPartner) {
-        throw new ApiError(409, "Delivery partner with this phone number already exists");
-    }
-    
-    const deliveryPartner = await DeliveryPartner.create({
-        name,
-        phone: phoneNumber,
-        status: status || 'pending'
-    });
-    
-    return res.status(201).json(
-        new ApiResponse(201, deliveryPartner, "Delivery partner created successfully")
-    );
-});
-
-export const updateDeliveryPartner = asyncHandler(async (req, res) => {
+export const getDeliveryPartnerById = asyncHandler(async (req, res) => {
     const { id } = req.params;
-    const updateData = req.body;
     
-    // If phone number is being updated, check for duplicates
-    if (updateData.phone) {
-        const existingPartner = await DeliveryPartner.findOne({ 
-            phone: updateData.phone, 
-            _id: { $ne: id } 
-        });
-        if (existingPartner) {
-            throw new ApiError(409, "Delivery partner with this phone number already exists");
-        }
-    }
-    
-    const deliveryPartner = await DeliveryPartner.findByIdAndUpdate(
-        id,
-        { $set: updateData },
-        { new: true, runValidators: true }
-    ).select('-__v');
+    const deliveryPartner = await DeliveryPartner.findById(id)
+        .select('-__v')
+        .populate('assignedOrders', 'orderId status totalAmount customerAddress deliveryAddress createdAt');
     
     if (!deliveryPartner) {
         throw new ApiError(404, "Delivery partner not found");
     }
     
     return res.status(200).json(
-        new ApiResponse(200, deliveryPartner, "Delivery partner updated successfully")
+        new ApiResponse(200, deliveryPartner, "Delivery partner retrieved successfully")
     );
 });
 
-export const deleteDeliveryPartner = asyncHandler(async (req, res) => {
-    const { id } = req.params;
-    
-    // Soft delete - set isActive to false
-    const deliveryPartner = await DeliveryPartner.findByIdAndUpdate(
-        id,
-        { isActive: false },
-        { new: true }
-    );
-    
-    if (!deliveryPartner) {
-        throw new ApiError(404, "Delivery partner not found");
-    }
-    
-    return res.status(200).json(
-        new ApiResponse(200, {}, "Delivery partner deleted successfully")
-    );
-});
+// CRUD handlers moved to shared/deliveryPartnerManagement.controller.js
 
 // Store Management
 export const getStoreDetails = asyncHandler(async (req, res) => {
@@ -390,5 +470,65 @@ export const getDashboardStats = asyncHandler(async (req, res) => {
     
     return res.status(200).json(
         new ApiResponse(200, stats, "Dashboard statistics retrieved successfully")
+    );
+});
+
+// Order Management Statistics
+export const getOrderManagementStats = asyncHandler(async (req, res) => {
+    console.log('🔍 getOrderManagementStats: Starting stats retrieval...');
+    console.log('🔍 getOrderManagementStats: Request user:', req.user);
+    
+    const managerId = req.user._id;
+    console.log('🔍 getOrderManagementStats: Manager ID:', managerId);
+    
+    // Get the manager's store ID
+    const manager = await Manager.findById(managerId).select('store');
+    console.log('🔍 getOrderManagementStats: Manager found:', manager);
+    
+    if (!manager || !manager.store) {
+        console.log('❌ getOrderManagementStats: Manager or store not found');
+        throw new ApiError(404, "Manager's store not found");
+    }
+    
+    console.log('🔍 getOrderManagementStats: Store ID:', manager.store);
+    
+    // Get comprehensive order statistics - filter by store instead of manager
+    const totalOrders = await Order.countDocuments({ store: manager.store });
+    const deliveredOrders = await Order.countDocuments({ 
+        store: manager.store, 
+        status: 'delivered' 
+    });
+    const inTransitOrders = await Order.countDocuments({ 
+        store: manager.store, 
+        status: 'in_transit' 
+    });
+    const pickedUpOrders = await Order.countDocuments({ 
+        store: manager.store, 
+        status: 'picked_up' 
+    });
+    
+    console.log('🔍 getOrderManagementStats: Counts:', { totalOrders, deliveredOrders, inTransitOrders, pickedUpOrders });
+    
+    // Calculate total revenue
+    const revenueResult = await Order.aggregate([
+        { $match: { store: manager.store } },
+        { $group: { _id: null, totalRevenue: { $sum: '$amount' } } }
+    ]);
+    
+    const totalRevenue = revenueResult.length > 0 ? revenueResult[0].totalRevenue : 0;
+    console.log('🔍 getOrderManagementStats: Total revenue:', totalRevenue);
+    
+    const stats = {
+        totalOrders,
+        delivered: deliveredOrders,
+        inTransit: inTransitOrders,
+        pickedUp: pickedUpOrders,
+        totalRevenue
+    };
+    
+    console.log('✅ getOrderManagementStats: Successfully retrieved stats');
+    
+    return res.status(200).json(
+        new ApiResponse(200, { stats }, "Order management statistics retrieved successfully")
     );
 });

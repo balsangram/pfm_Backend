@@ -219,6 +219,7 @@ export const scanOrderQr = asyncHandler(async (req, res) => {
 
 // Delivery partner responds to an order after scanning
 export const respondToOrder = asyncHandler(async (req, res) => {
+    
     const deliveryPartnerId = req.user._id; // Use _id instead of id
     const { orderId, action } = req.body;
 
@@ -284,11 +285,11 @@ export const respondToOrder = asyncHandler(async (req, res) => {
             $inc: { totalAccepted: 1 }
         });
 
-            return res.status(200).json(new ApiResponse(200, {
-        accepted: true,
-        order: updated,
-        message: "Order accepted successfully"
-    }, "Order accepted and assigned to delivery partner"));
+        return res.status(200).json(new ApiResponse(200, {
+            accepted: true,
+            order: updated,
+            message: "Order accepted successfully"
+        }, "Order accepted and assigned to delivery partner"));
     }
 
     return res.status(400).json(new ApiResponse(400, null, "Invalid action. Must be 'accept' or 'reject'"));
@@ -296,8 +297,11 @@ export const respondToOrder = asyncHandler(async (req, res) => {
 
 // Initiate delivery - called when delivery partner starts navigation
 export const initiateDelivery = asyncHandler(async (req, res) => {
+    console.log(req.user._id, "req.user._id");
+    console.log(req.body,"req.body");
     const deliveryPartnerId = req.user._id;
     const { orderId } = req.body;
+
 
     const order = await Order.findOne({
         _id: orderId,

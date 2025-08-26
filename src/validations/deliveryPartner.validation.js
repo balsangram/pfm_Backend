@@ -1,5 +1,10 @@
 import Joi from "joi";
 
+// Debug: Verify Joi import
+console.log('🔍 Joi imported successfully:', !!Joi);
+console.log('🔍 Joi version:', Joi.version);
+console.log('🔍 Joi has object method:', typeof Joi.object === 'function');
+
 // Validation for creating new delivery partner
 export const createDeliveryPartnerValidation = Joi.object({
     name: Joi.string()
@@ -215,6 +220,11 @@ export const initiateDeliveryValidation = Joi.object({
             'any.required': 'Order ID is required'
         })
 });
+
+// Debug: Log the schema definition
+console.log('🔍 initiateDeliveryValidation schema defined:', !!initiateDeliveryValidation);
+console.log('🔍 initiateDeliveryValidation schema type:', typeof initiateDeliveryValidation);
+console.log('🔍 initiateDeliveryValidation has validate method:', initiateDeliveryValidation && typeof initiateDeliveryValidation.validate === 'function');
 
 // Mark order delivered validation
 export const markDeliveredValidation = Joi.object({
