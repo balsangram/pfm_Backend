@@ -91,22 +91,43 @@ const typeCategoriesAllCard = asyncHandler(async (req, res) => {
     );
 });
 
+// const fullDetailsOfSubCategorieCard = asyncHandler(async (req, res) => {
+//     const { id } = req.params; // SubCategory ID
+//     const objectId = new mongoose.Types.ObjectId(id);
+
+//     // Find subcategory by ID
+//     const subCategory = await SubCategory.findById(objectId);
+
+//     if (!subCategory) {
+//         return res.status(404).json(new ApiResponse(404, null, "Subcategory not found"));
+//     }
+
+//     // Return full details
+//     res.status(200).json(
+//         new ApiResponse(200, subCategory, "Subcategory details retrieved successfully")
+//     );
+// });
+
 const fullDetailsOfSubCategorieCard = asyncHandler(async (req, res) => {
     const { id } = req.params; // SubCategory ID
     const objectId = new mongoose.Types.ObjectId(id);
+    id = objectId;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+        return res.status(400).json(new ApiResponse(400, null, "Invalid Subcategory ID"));
+    }
 
-    // Find subcategory by ID
-    const subCategory = await SubCategory.findById(objectId);
+    // Find subcategory by ID with only required fields
+    const subCategory = await SubCategory.findById(id).select("name img description");
 
     if (!subCategory) {
         return res.status(404).json(new ApiResponse(404, null, "Subcategory not found"));
     }
 
-    // Return full details
     res.status(200).json(
         new ApiResponse(200, subCategory, "Subcategory details retrieved successfully")
     );
 });
+
 
 // Controller
 const searchItem = asyncHandler(async (req, res) => {

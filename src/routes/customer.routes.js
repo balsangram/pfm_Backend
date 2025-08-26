@@ -15,7 +15,6 @@ router.post("/verify-login", customerVerifyLogin);
 // Customer refresh token route
 router.post("/refresh-token", customerRefreshToken);
 
-
 // Protect all subsequent customer routes
 router.use(verifyJWT, verifyRole("customer"));
 
@@ -35,8 +34,6 @@ router.get("/wallet/:userId", customerCouponsController.displayWalletPoint);
 
 router.get("/coupons/:userId", customerCouponsController.displayCoupons);
 router.post("/use-coupons/:userId/:couponId", customerCouponsController.addCouponToUser);
-
-router.get("/notifications",);
 
 // cart 
 router.get("/cart/:userId", customerCartController.displayCartDetails);         // View cart

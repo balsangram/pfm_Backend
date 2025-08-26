@@ -6,15 +6,16 @@ import storeRoutes from "./src/routes/store.routes.js";
 import deliveryPartnerRoutes from "./src/routes/deliveryPartner.routes.js";
 import customerRoutes from "./src/routes/customer.routes.js";
 import cookieParser from 'cookie-parser'
+import { saveAndSubscribeToken } from "./src/controllers/auth.controller.js";
 
 const app = express();
 
 // CORS configuration for frontend
 const corsOptions = {
-  origin: ['http://localhost:5173', 'http://localhost:3000', 'http://localhost:3001'],
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
+    origin: ['http://localhost:5173', 'http://localhost:3000', 'http://localhost:3001'],
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
 };
 
 app.use(cors(corsOptions));
@@ -35,6 +36,9 @@ app.get('/', (req, res) => {
 app.get('/api/example', (req, res) => {
     res.json({ message: 'Example route' });
 });
+
+// notefication 
+app.use("/deviceToken", saveAndSubscribeToken);
 
 
 // Routes

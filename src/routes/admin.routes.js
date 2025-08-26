@@ -60,7 +60,7 @@ router.delete("/delivery-partners/:id", DeliveryPartnerController.deleteDelivery
 router.patch("/update-delevery-partners/:id", DeliveryPartnerController.editDeleveryPArtner);
 
 // Send Notification
-router.post("/send-notification", SendNotificationController.sendNotification);
+router.post("/send-notification-customer", SendNotificationController.sendCustomerNotification);
 
 // Product Categories
 router.get("/product-categories", ProductCategoryController.getProductCategories);
