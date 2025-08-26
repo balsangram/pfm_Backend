@@ -783,8 +783,6 @@ const totalProductAmount = asyncHandler(async (req, res) => {
         totalAmount += price * quantity;
     });
 
-
-
     return res
         .status(200)
         .json(new ApiResponse(200,
