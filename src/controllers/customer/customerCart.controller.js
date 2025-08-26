@@ -137,68 +137,104 @@ const addToCart = asyncHandler(async (req, res) => {
 // });
 
 // 🛒 Delete item from cart
+// const editToCart = asyncHandler(async (req, res) => {
+//     console.log("🚀 ~  req.body:", req.body)
+//     const { userId, itemId } = req.params;
+//     console.log("🚀 ~ req.params:", req.params)
+//     let { count } = req.body; // expects { "count": 3 }
+//     console.log("🚀 ~ count:", count)
+
+//     // Validate IDs
+//     if (!mongoose.Types.ObjectId.isValid(userId) || !mongoose.Types.ObjectId.isValid(itemId)) {
+//         return res.status(400).json({ message: "Invalid ID format" });
+//     }
+
+//     // Ensure count is valid
+//     count = Number(count);
+//     // console.log("🚀 ~ count:", count)
+//     if (isNaN(count) || count <= 0) {
+//         return res.status(400).json({ message: "Count must be a valid number greater than 0" });
+//     }
+
+//     // Find customer
+//     const customer = await Customer.findById(userId);
+//     // console.log("🚀 ~ customer:", customer)
+//     if (!customer) {
+//         return res.status(404).json({ message: "Customer not found" });
+//     }
+
+//     // Find the order in customer's cart
+//     const order = customer.orders.find((order) => {
+//         // Ensure both IDs are strings for accurate comparison
+//         const orderId = order._id.toString();
+//         const paramId = String(itemId).trim();
+
+//         // console.log("🚀 ~ orderId:", orderId, "paramId:", paramId);
+//         order === paramId
+//         return order;
+//     });
+
+//     // console.log(order, "🚀 ~ !order:", !order)
+//     if (!order) {
+//         return res.status(404).json({ message: "Item not found in cart" });
+//     }
+
+
+//     // ✅ Update only the count
+//     order.count = count;
+
+//     await customer.save();
+//     return res.status(200).json(
+//         new ApiResponse(200, { updatedItem: order }, "Cart item count updated successfully", {
+//             // totalItems,
+//             // totalDiscountPrice,
+//         })
+//     );
+
+// });
+
 const editToCart = asyncHandler(async (req, res) => {
-    console.log("🚀 ~  req.body:", req.body)
     const { userId, itemId } = req.params;
-    let { count } = req.body; // expects { "count": 3 }
-    console.log("🚀 ~ count:", count)
+    let { count } = req.body;
 
     // Validate IDs
     if (!mongoose.Types.ObjectId.isValid(userId) || !mongoose.Types.ObjectId.isValid(itemId)) {
         return res.status(400).json({ message: "Invalid ID format" });
     }
 
-    // Ensure count is valid
+    // Ensure count is a valid number
     count = Number(count);
-    // console.log("🚀 ~ count:", count)
     if (isNaN(count) || count <= 0) {
-        return res.status(400).json({ message: "Count must be a valid number greater than 0" });
+        return res.status(400).json({ message: "Count must be a number greater than 0" });
     }
 
     // Find customer
     const customer = await Customer.findById(userId);
-    // console.log("🚀 ~ customer:", customer)
     if (!customer) {
         return res.status(404).json({ message: "Customer not found" });
     }
 
-    // Find the order in customer's cart
-    const order = customer.orders.find((order) => {
-        // Ensure both IDs are strings for accurate comparison
-        const orderId = order._id.toString();
-        const paramId = String(itemId).trim();
+    // Find the order in customer's cart by subCategory ID
+    const order = customer.orders.find(
+        (o) => o.subCategory.toString() === itemId
+    );
 
-        // console.log("🚀 ~ orderId:", orderId, "paramId:", paramId);
-        order === paramId
-        return order;
-    });
-    // console.log("🚀 ~ order:", order)
-
-    // console.log(order, "🚀 ~ !order:", !order)
     if (!order) {
         return res.status(404).json({ message: "Item not found in cart" });
     }
 
-
-    // ✅ Update only the count
+    // Update the count
     order.count = count;
-    // console.log("🚀 ~ order:", order)
-    // console.log(customer, "customer----------------");
 
     await customer.save();
 
-    // res.status(200).json({
-    //     message: "Cart item count updated successfully",
-    //     updatedItem: order,
-    // });
     return res.status(200).json(
-        new ApiResponse(200, { updatedItem: order }, "Cart item count updated successfully", {
-            // totalItems,
-            // totalDiscountPrice,
-        })
+        new ApiResponse(200, { updatedItem: order }, "Cart item count updated successfully")
     );
-
 });
+
+
+
 
 // const editToCart = asyncHandler(async (req, res) => {
 //     const { userId, itemId } = req.params;
@@ -732,7 +768,7 @@ export const createOrder = asyncHandler(async (req, res) => {
 
 
 const cancelOrder = asyncHandler(async (req, res) => {
-    const { userId, orderId ,notes} = req.params;
+    const { userId, orderId, notes } = req.params;
 
     // Validate IDs
     if (!mongoose.Types.ObjectId.isValid(userId) || !mongoose.Types.ObjectId.isValid(orderId)) {
