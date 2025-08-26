@@ -766,12 +766,20 @@ const cancelOrder = asyncHandler(async (req, res) => {
 const totalProductAmount = asyncHandler(async (req, res) => {
     const { userId } = req.params;
 
-    if (!userId) return res.status(400).json({ success: false, message: "UserId is required" });
+    if (!userId) {
+        return res
+            .status(400)
+            .json(new ApiResponse(400, null, "UserId is required"));
+    }
 
     // Fetch customer and populate subCategory to get discountPrice
     const customer = await Customer.findById(userId).populate("orders.subCategory", "discountPrice");
 
-    if (!customer) return res.status(404).json({ success: false, message: "Customer not found" });
+    if (!customer) {
+        return res
+            .status(404)
+            .json(new ApiResponse(404, null, "Customer not found"));
+    }
 
     let totalCount = 0;
     let totalAmount = 0;
@@ -783,13 +791,17 @@ const totalProductAmount = asyncHandler(async (req, res) => {
         totalAmount += price * quantity;
     });
 
-    return res
-        .status(200)
-        .json(new ApiResponse(200,
-            totalCount,
-            totalAmount, "Order history fetched successfully"));
-
+    return res.status(200).json(
+        new ApiResponse(200,
+            {
+                totalCount,
+                totalAmount
+            },
+            "Order history fetched successfully"
+        )
+    );
 });
+
 
 
 export const customerCartController = {
