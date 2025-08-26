@@ -57,8 +57,8 @@ const displayCoupons = asyncHandler(async (req, res) => {
 });
 
 const addCouponToUser = asyncHandler(async (req, res) => {
-    const { userId, couponId } = req.params;
-
+    const { userId } = req.params;
+    const { couponId } = req.body;
     // Validate IDs
     if (!userId || !mongoose.Types.ObjectId.isValid(userId)) {
         throw new ApiError(400, "Invalid user ID");

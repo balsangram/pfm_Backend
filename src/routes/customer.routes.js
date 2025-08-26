@@ -33,7 +33,7 @@ router.delete("/address/:userId/:addressId", customerProfileController.deleteAdd
 router.get("/wallet/:userId", customerCouponsController.displayWalletPoint);
 
 router.get("/coupons/:userId", customerCouponsController.displayCoupons);
-router.post("/use-coupons/:userId/:couponId", customerCouponsController.addCouponToUser);
+router.post("/use-coupons/:userId", customerCouponsController.addCouponToUser);
 
 // cart 
 router.get("/cart/:userId", customerCartController.displayCartDetails);         // View cart
