@@ -212,8 +212,6 @@ export const getDeliveryPartnerById = asyncHandler(async (req, res) => {
 
 // update paqrtner 
 
-
-
 // Update delivery partner status
 const updateDeliveryPartnerStatus = asyncHandler(async (req, res) => {
     const { id } = req.params;

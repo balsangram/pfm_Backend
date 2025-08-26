@@ -91,10 +91,10 @@ const managerSchema = new mongoose.Schema({
 
 // Index for better query performance
 managerSchema.index({ phone: 1 });
-managerSchema.index({ email: 1 });
-managerSchema.index({ store: 1 });
+// managerSchema.index({ email: 1 });
+// managerSchema.index({ store: 1 });
 managerSchema.index({ pincode: 1 });
-managerSchema.index({ isActive: 1 });
+// managerSchema.index({ isActive: 1 });
 
 const Manager = mongoose.model("Manager", managerSchema);
 

@@ -5,7 +5,7 @@ import { adminLogin, adminRefreshToken } from "../controllers/auth.controller.js
 import { AdminProfileController } from "../controllers/admin/adminProfile.controller.js";
 import { MeatCenterController } from "../controllers/admin/meatCenter.controller.js";
 import { DeliveryPartnerController } from "../controllers/admin/deliveryPartner.controller.js";
-import { SendNotificationController } from "../controllers/admin/sendNotification.controller.js";
+import { sendCustomerNotification } from "../controllers/admin/sendNotification.controller.js";
 import { ProductCategoryController } from "../controllers/admin/productCategories.controller.js";
 import { upload } from "../middlewares/multer.middleware.js"
 import {
@@ -60,7 +60,7 @@ router.delete("/delivery-partners/:id", DeliveryPartnerController.deleteDelivery
 router.patch("/update-delevery-partners/:id", DeliveryPartnerController.editDeleveryPArtner);
 
 // Send Notification
-router.post("/send-notification-customer", SendNotificationController.sendCustomerNotification);
+router.post("/send-notification-customer", sendCustomerNotification);
 
 // Product Categories
 router.get("/product-categories", ProductCategoryController.getProductCategories);

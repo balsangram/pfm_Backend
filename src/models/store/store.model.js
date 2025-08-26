@@ -49,15 +49,15 @@ const storeSchema = new mongoose.Schema({
 })
 
 // Indexes for better query performance
-storeSchema.index({ name: 1 });
-storeSchema.index({ location: 1 });
-storeSchema.index({ manager: 1 });
-storeSchema.index({ isActive: 1 });
+// storeSchema.index({ name: 1 });
+// storeSchema.index({ location: 1 });
+// storeSchema.index({ manager: 1 });
+// storeSchema.index({ isActive: 1 });
 storeSchema.index({ lat: 1, long: 1 });
 // Ensure phone is unique only when present and not null
-storeSchema.index(
-    { phone: 1 },
-    { unique: 1, partialFilterExpression: { phone: { $exists: true, $ne: null } } }
-);
+// storeSchema.index(
+//     { phone: 1 },
+//     { unique: 1, partialFilterExpression: { phone: { $exists: true, $ne: null } } }
+// );
 
 export default mongoose.model("Store", storeSchema)

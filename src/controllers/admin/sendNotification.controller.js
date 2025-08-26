@@ -1,85 +1,123 @@
 import Notification from "../../models/notification/notification.model.js";
+import Customer from "../../models/customer/customer.model.js";
 import moment from "moment-timezone";
-import admin from "../../../firebase.js"; // Firebase Admin SDK
+import admin from "../../../firebase.js";
 
 const IST_TIMEZONE = "Asia/Kolkata";
 
 export const sendCustomerNotification = async (req, res) => {
-    const { title, body, deviceToken, link, NotificationTime, userId } = req.body;
+    const { title, body, link } = req.body;
 
-    if (!title || !body || !deviceToken) {
+    if (!title || !body) {
         return res.status(400).json({
-            message: "Title, body, and deviceToken are required"
+            message: "Title and body are required"
         });
     }
 
     try {
-        const notificationTime = NotificationTime
-            ? new Date(NotificationTime)
-            : moment().tz(IST_TIMEZONE).toDate();
+        // 1️⃣ Find all customers with at least one fcToken
+        const customers = await Customer.find({ fcToken: { $exists: true, $ne: [] } });
 
+        if (customers.length === 0) {
+            return res.status(200).json({
+                message: "No customers with device tokens found"
+            });
+        }
+
+        // 2️⃣ Collect all tokens into a single array
+        const allTokens = customers.flatMap(c => c.fcToken);
+
+        // 3️⃣ Save notification in DB for reference
         const notification = new Notification({
             title,
             body,
             link: link ?? "",
-            userId: userId ?? null,
-            deviceToken,
-            NotificationTime: notificationTime,
+            fcToken: allTokens,
+            NotificationTime: moment().tz(IST_TIMEZONE).toDate(),
             sent: false
         });
         await notification.save();
 
+        // 4️⃣ Prepare Firebase multicast message
         const message = {
             notification: { title, body },
-            token: deviceToken, // 👈 Send to that specific user device
+            tokens: allTokens,
             data: link ? { link } : {}
         };
 
-        // Send immediately if no scheduling
-        if (!NotificationTime) {
-            const response = await admin.messaging().send(message);
+        // 5️⃣ Send notification to all devices
+        const response = await admin.messaging().sendMulticast(message);
 
-            await Notification.findByIdAndUpdate(notification._id, { sent: true });
-
-            return res.status(200).json({
-                message: "Notification sent to user",
-                notification,
-                firebaseResponse: response,
-                sentAtIST: moment().tz(IST_TIMEZONE).format("YYYY-MM-DD HH:mm")
-            });
-        }
-
-        // Future schedule
-        if (moment(notificationTime).tz(IST_TIMEZONE).isBefore(moment())) {
-            return res.status(200).json({
-                message: "Notification saved but not sent (scheduled time in the past)",
-                notification
-            });
-        }
-
-        await scheduleJob(notificationTime, async () => {
-            try {
-                const response = await admin.messaging().send(message);
-                await Notification.findByIdAndUpdate(notification._id, { sent: true });
-                console.log("Scheduled user notification sent:", response);
-            } catch (err) {
-                console.error("Error sending scheduled user notification:", err.message);
-            }
-        });
+        // 6️⃣ Update notification as sent if at least one succeeded
+        const sentStatus = response.successCount > 0;
+        await Notification.findByIdAndUpdate(notification._id, { sent: sentStatus });
 
         return res.status(200).json({
-            message: "Notification scheduled for user successfully",
-            notification
+            message: "Notification sent to all customers",
+            totalCustomers: customers.length,
+            totalTokens: allTokens.length,
+            notification,
+            firebaseResponse: response,
+            sentAtIST: moment().tz(IST_TIMEZONE).format("YYYY-MM-DD HH:mm")
         });
+
     } catch (error) {
-        console.error("Error sending user notification:", error);
+        console.error("Error sending notifications:", error);
         return res.status(500).json({
-            message: "Failed to send user notification",
+            message: "Failed to send notifications",
             error: error.message
         });
     }
 };
 
-export const SendNotificationController = {
-    sendCustomerNotification
+
+
+export const saveAndSubscribeToken = async (req, res) => {
+  const { token, customerId } = req.body;
+
+  if (!token || typeof token !== "string") {
+    return res.status(400).json({ message: "Valid device token is required." });
+  }
+
+  try {
+    // Subscribe token to 'all' topic
+    const response = await admin.messaging().subscribeToTopic(token, "all");
+
+    if (!response || response.failureCount > 0) {
+      const errorInfo = response.errors?.[0]?.error || "Unknown error while subscribing.";
+      return res.status(400).json({
+        message: "Failed to subscribe token to topic 'all'.",
+        error: errorInfo,
+      });
+    }
+
+    console.log("Token subscribed to 'all' topic:", response);
+
+    // Save token to customer's fcToken array (avoid duplicates)
+    const customer = await Customer.findById(customerId);
+    if (!customer) {
+      return res.status(404).json({ message: "Customer not found." });
+    }
+
+    if (!customer.fcToken.includes(token)) {
+      customer.fcToken.push(token);
+      await customer.save();
+      console.log("Token added to customer's fcToken array");
+    } else {
+      console.log("Token already exists for this customer");
+    }
+
+    res.status(200).json({
+      message: "Token saved and subscribed to topic 'all' successfully.",
+      firebaseResponse: response,
+      customerId,
+      totalTokens: customer.fcToken.length,
+    });
+  } catch (error) {
+    console.error("Error in saveAndSubscribeToken:", error);
+    res.status(500).json({
+      message: "Internal server error occurred while processing token.",
+      error: error.message || "Unexpected error",
+    });
+  }
 };
