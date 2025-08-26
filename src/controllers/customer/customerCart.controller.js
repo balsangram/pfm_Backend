@@ -23,7 +23,7 @@ const displayCartDetails = asyncHandler(async (req, res) => {
     const customer = await Customer.findById(userId)
         .populate({
             path: "orders.subCategory",
-            select: "name img price", // only required fields
+            select: "name img price discount discountPrice", // only required fields
         })
         .select("name phone wallet orders");
 
@@ -566,6 +566,33 @@ const cancelOrder = asyncHandler(async (req, res) => {
     });
 });
 
+const totalProductAmount = asyncHandler(async (req, res) => {
+    const { userId } = req.params;
+
+    if (!userId) return res.status(400).json({ success: false, message: "UserId is required" });
+
+    // Fetch customer and populate subCategory to get discountPrice
+    const customer = await Customer.findById(userId).populate("orders.subCategory", "discountPrice");
+
+    if (!customer) return res.status(404).json({ success: false, message: "Customer not found" });
+
+    let totalCount = 0;
+    let totalAmount = 0;
+
+    customer.orders.forEach((item) => {
+        const quantity = item.count || 1;
+        const price = item.subCategory?.discountPrice || 0;
+        totalCount += quantity;
+        totalAmount += price * quantity;
+    });
+
+    res.json({
+        success: true,
+        totalCount,
+        totalAmount,
+    });
+});
+
 
 export const customerCartController = {
     displayCartDetails,
@@ -576,4 +603,6 @@ export const customerCartController = {
     orderHistory,
     createOrder,
     cancelOrder,
+
+    totalProductAmount
 }

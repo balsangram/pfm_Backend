@@ -456,87 +456,182 @@ const getSubProductCategories = asyncHandler(async (req, res) => {
     );
 });
 
+// const createSubProductCategory = asyncHandler(async (req, res) => {
+//     console.log("Request body:", req.body);
+//     console.log("Request files:", req.file);
+
+//     const { id } = req.params; // Parent TypeCategory ID
+
+//     // Validate parent category
+//     const parentCategory = await TypeCategory.findById(id);
+//     if (!parentCategory) {
+//         throw new ApiError(404, "Parent TypeCategory not found");
+//     }
+
+//     // Extract only the necessary fields (minimal for schema compliance)
+//     const { name = "Default Subcategory", type = [], description = "Default description", weight = "0", pieces = "1", serves = 1, totalEnergy = 0, price = 0 } = req.body;
+
+//     // Ensure type is an array
+//     const typeArray = Array.isArray(type) ? type : type ? [type] : [];
+
+//     // Validate required fields (as per SubCategorySchema)
+//     if (!name || name.trim().length < 2) {
+//         throw new ApiError(400, "Subcategory name is required and must be at least 2 characters long");
+//     }
+//     if (!typeArray.length) {
+//         throw new ApiError(400, "At least one type is required");
+//     }
+//     if (!description || description.trim().length < 5) {
+//         throw new ApiError(400, "Description is required and must be at least 5 characters long");
+//     }
+//     if (!weight) {
+//         throw new ApiError(400, "Weight is required");
+//     }
+//     if (!pieces) {
+//         throw new ApiError(400, "Pieces is required");
+//     }
+//     if (serves < 1) {
+//         throw new ApiError(400, "Serves must be at least 1");
+//     }
+//     if (totalEnergy < 0) {
+//         throw new ApiError(400, "Total energy cannot be negative");
+//     }
+//     if (price < 0) {
+//         throw new ApiError(400, "Price cannot be negative");
+//     }
+
+//     // Handle image uploads
+//     let img = "";
+
+//     if (req.file) {
+//         try {
+//             const result = await uploadBufferToCloudinary(req.file.buffer);
+//             console.log("🚀 ~ result:", result)
+//             if (!result.secure_url) {
+//                 throw new ApiError(500, "Failed to upload image to Cloudinary");
+//             }
+//             img = result.secure_url;
+//             console.log("🚀 ~ img:", img)
+//         } catch (error) {
+//             console.error("Cloudinary upload erro   r:", error);
+//             throw new ApiError(500, `Image upload failed: ${error.message}`);
+//         }
+//     } else {
+//         console.warn("No image provided; proceeding without image");
+//     }
+
+
+//     // Create subcategory document
+//     const newSubcategory = await SubCategory.create({
+//         img: img, // Use first image or empty string (as per original schema 'img')
+//         name,
+//         type: typeArray,
+//         quality: "", // Default as per schema
+//         description,
+//         weight,
+//         pieces,
+//         serves: Number(serves),
+//         totalEnergy: Number(totalEnergy),
+//         carbohydrate: 0, // Default as per schema
+//         fat: 0, // Default as per schema
+//         protein: 0, // Default as per schema
+//         price: Number(price),
+//         bestSellers: false, // Default as per schema
+//     });
+
+//     // Link subcategory to parent category
+//     parentCategory.subCategories.push(newSubcategory._id);
+//     await parentCategory.save();
+
+//     // Return structured response
+//     return res.status(201).json(
+//         new ApiResponse(
+//             201,
+//             {
+//                 id: newSubcategory._id,
+//                 name: newSubcategory.name,
+//                 img: newSubcategory.img, // Return single img as per schema
+//                 type: newSubcategory.type,
+//             },
+//             "Subcategory created successfully"
+//         )
+//     );
+// });
+
 const createSubProductCategory = asyncHandler(async (req, res) => {
     console.log("Request body:", req.body);
-    console.log("Request files:", req.file);
+    console.log("Request file:", req.file);
 
     const { id } = req.params; // Parent TypeCategory ID
 
     // Validate parent category
     const parentCategory = await TypeCategory.findById(id);
-    if (!parentCategory) {
-        throw new ApiError(404, "Parent TypeCategory not found");
-    }
+    if (!parentCategory) throw new ApiError(404, "Parent TypeCategory not found");
 
-    // Extract only the necessary fields (minimal for schema compliance)
-    const { name = "Default Subcategory", type = [], description = "Default description", weight = "0", pieces = "1", serves = 1, totalEnergy = 0, price = 0 } = req.body;
+    // Extract fields from body with defaults
+    const {
+        name = "Default Subcategory",
+        type = [],
+        description = "Default description",
+        weight = "0",
+        pieces = "1",
+        serves = 1,
+        totalEnergy = 0,
+        price = 0,
+        discount = 0, // optional discount %
+    } = req.body;
 
     // Ensure type is an array
     const typeArray = Array.isArray(type) ? type : type ? [type] : [];
 
-    // Validate required fields (as per SubCategorySchema)
-    if (!name || name.trim().length < 2) {
+    // Validate required fields
+    if (!name || name.trim().length < 2)
         throw new ApiError(400, "Subcategory name is required and must be at least 2 characters long");
-    }
-    if (!typeArray.length) {
-        throw new ApiError(400, "At least one type is required");
-    }
-    if (!description || description.trim().length < 5) {
+    if (!typeArray.length) throw new ApiError(400, "At least one type is required");
+    if (!description || description.trim().length < 5)
         throw new ApiError(400, "Description is required and must be at least 5 characters long");
-    }
-    if (!weight) {
-        throw new ApiError(400, "Weight is required");
-    }
-    if (!pieces) {
-        throw new ApiError(400, "Pieces is required");
-    }
-    if (serves < 1) {
-        throw new ApiError(400, "Serves must be at least 1");
-    }
-    if (totalEnergy < 0) {
-        throw new ApiError(400, "Total energy cannot be negative");
-    }
-    if (price < 0) {
-        throw new ApiError(400, "Price cannot be negative");
-    }
+    if (!weight) throw new ApiError(400, "Weight is required");
+    if (!pieces) throw new ApiError(400, "Pieces is required");
+    if (serves < 1) throw new ApiError(400, "Serves must be at least 1");
+    if (totalEnergy < 0) throw new ApiError(400, "Total energy cannot be negative");
+    if (price < 0) throw new ApiError(400, "Price cannot be negative");
 
-    // Handle image uploads
+    // Handle image upload
     let img = "";
-
     if (req.file) {
         try {
             const result = await uploadBufferToCloudinary(req.file.buffer);
-            console.log("🚀 ~ result:", result)
-            if (!result.secure_url) {
-                throw new ApiError(500, "Failed to upload image to Cloudinary");
-            }
+            if (!result.secure_url) throw new ApiError(500, "Failed to upload image to Cloudinary");
             img = result.secure_url;
-            console.log("🚀 ~ img:", img)
         } catch (error) {
-            console.error("Cloudinary upload erro   r:", error);
+            console.error("Cloudinary upload error:", error);
             throw new ApiError(500, `Image upload failed: ${error.message}`);
         }
-    } else {
-        console.warn("No image provided; proceeding without image");
     }
 
+    // Calculate discount price
+    const discountPrice = discount && discount > 0
+        ? price - (price * discount) / 100
+        : price;
 
     // Create subcategory document
     const newSubcategory = await SubCategory.create({
-        img: img, // Use first image or empty string (as per original schema 'img')
+        img,
         name,
         type: typeArray,
-        quality: "", // Default as per schema
+        quality: "",
         description,
         weight,
         pieces,
         serves: Number(serves),
         totalEnergy: Number(totalEnergy),
-        carbohydrate: 0, // Default as per schema
-        fat: 0, // Default as per schema
-        protein: 0, // Default as per schema
+        carbohydrate: 0,
+        fat: 0,
+        protein: 0,
         price: Number(price),
-        bestSellers: false, // Default as per schema
+        discount: Number(discount),
+        discountPrice: Number(discountPrice),
+        bestSellers: false,
     });
 
     // Link subcategory to parent category
@@ -550,14 +645,16 @@ const createSubProductCategory = asyncHandler(async (req, res) => {
             {
                 id: newSubcategory._id,
                 name: newSubcategory.name,
-                img: newSubcategory.img, // Return single img as per schema
+                img: newSubcategory.img,
                 type: newSubcategory.type,
+                price: newSubcategory.price,
+                discount: newSubcategory.discount,
+                discountPrice: newSubcategory.discountPrice,
             },
             "Subcategory created successfully"
         )
     );
 });
-
 
 const updateSubProductCategory = asyncHandler(async (req, res) => {
     const { id } = req.params; // SubCategory ID
@@ -575,7 +672,8 @@ const updateSubProductCategory = asyncHandler(async (req, res) => {
         fat,
         protein,
         description,
-        price
+        price,
+        discount // optional discount %
     } = req.body;
 
     // Ensure type is always an array
@@ -585,12 +683,10 @@ const updateSubProductCategory = asyncHandler(async (req, res) => {
 
     // Find existing subcategory
     const subCategory = await SubCategory.findById(id);
-    if (!subCategory) {
-        throw new ApiError(404, "Subcategory not found");
-    }
+    if (!subCategory) throw new ApiError(404, "Subcategory not found");
 
-    // If new image uploaded, replace it
-    let imgUrl = subCategory.img; // keep old image by default
+    // Handle new image upload
+    let imgUrl = subCategory.img;
     if (req.file) {
         try {
             const result = await uploadBufferToCloudinary(req.file.buffer);
@@ -613,8 +709,15 @@ const updateSubProductCategory = asyncHandler(async (req, res) => {
     subCategory.fat = fat || subCategory.fat;
     subCategory.protein = protein || subCategory.protein;
     subCategory.description = description || subCategory.description;
-    subCategory.price = price || subCategory.price;
+    subCategory.price = price !== undefined ? Number(price) : subCategory.price;
+    subCategory.discount = discount !== undefined ? Number(discount) : subCategory.discount;
     subCategory.img = imgUrl;
+
+    // Calculate discountPrice
+    subCategory.discountPrice =
+        subCategory.discount && subCategory.discount > 0
+            ? subCategory.price - (subCategory.price * subCategory.discount) / 100
+            : subCategory.price;
 
     const updatedSubCategory = await subCategory.save();
 
@@ -622,6 +725,69 @@ const updateSubProductCategory = asyncHandler(async (req, res) => {
         new ApiResponse(200, updatedSubCategory, "Subcategory updated successfully")
     );
 });
+// const updateSubProductCategory = asyncHandler(async (req, res) => {
+//     const { id } = req.params; // SubCategory ID
+//     console.log("🚀 ~ Updating subcategory:", id);
+
+//     let {
+//         name,
+//         type,
+//         quality,
+//         weight,
+//         pieces,
+//         serves,
+//         totalEnergy,
+//         carbohydrate,
+//         fat,
+//         protein,
+//         description,
+//         price
+//     } = req.body;
+
+//     // Ensure type is always an array
+//     if (!Array.isArray(type)) {
+//         type = type ? [type] : [];
+//     }
+
+//     // Find existing subcategory
+//     const subCategory = await SubCategory.findById(id);
+//     if (!subCategory) {
+//         throw new ApiError(404, "Subcategory not found");
+//     }
+
+//     // If new image uploaded, replace it
+//     let imgUrl = subCategory.img; // keep old image by default
+//     if (req.file) {
+//         try {
+//             const result = await uploadBufferToCloudinary(req.file.buffer);
+//             imgUrl = result.secure_url;
+//         } catch (error) {
+//             console.error("Cloudinary upload error:", error);
+//             throw new ApiError(500, "Image upload failed");
+//         }
+//     }
+
+//     // Update fields
+//     subCategory.name = name || subCategory.name;
+//     subCategory.type = type.length ? type : subCategory.type;
+//     subCategory.quality = quality || subCategory.quality;
+//     subCategory.weight = weight || subCategory.weight;
+//     subCategory.pieces = pieces || subCategory.pieces;
+//     subCategory.serves = serves || subCategory.serves;
+//     subCategory.totalEnergy = totalEnergy || subCategory.totalEnergy;
+//     subCategory.carbohydrate = carbohydrate || subCategory.carbohydrate;
+//     subCategory.fat = fat || subCategory.fat;
+//     subCategory.protein = protein || subCategory.protein;
+//     subCategory.description = description || subCategory.description;
+//     subCategory.price = price || subCategory.price;
+//     subCategory.img = imgUrl;
+
+//     const updatedSubCategory = await subCategory.save();
+
+//     res.status(200).json(
+//         new ApiResponse(200, updatedSubCategory, "Subcategory updated successfully")
+//     );
+// });
 
 
 const deleteSubProductCategory = asyncHandler(async (req, res) => {

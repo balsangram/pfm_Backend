@@ -41,6 +41,8 @@ router.post("/cart/:userId", customerCartController.addToCart);                 
 router.patch("/cart/:userId/item/:itemId", customerCartController.editToCart);  // Update qty
 router.delete("/cart/:userId/item/:itemId", customerCartController.deleteToCart); // Remove item
 
+router.get("/cart-details/:userId", customerCartController.totalProductAmount); // Remove item
+
 //order related
 router.get("/order-history/:userId", customerCartController.orderHistory);
 router.post("/create-order/:userId", customerCartController.createOrder);
