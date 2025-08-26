@@ -4,6 +4,7 @@ import Categories from "../../models/catalog/categories.model.js"
 import TypeCategory from "../../models/catalog/typeCategories.model.js";
 import SubCategory from "../../models/catalog/subCategorySchema.model.js";
 import mongoose from "mongoose";
+import Customers from "../../models/customer/customer.model.js"
 
 const allCategories = asyncHandler(async (req, res) => {
     // Fetch only name and img
@@ -25,16 +26,41 @@ const bestSellingProducts = asyncHandler(async (req, res) => {
 });
 
 const bestSellingProductsById = asyncHandler(async (req, res) => {
-    const {id} = req.body;
-    // Fetch all subcategories where bestSellers is true
-    const bestSellers = await SubCategory.find({ bestSellers: true }).sort({ createdAt: -1 }); // newest first
+    console.log("🚀 ~ req.body:", req.params)
+    const { userId } = req.params;
+
+    // Validate userId
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+        return res.status(400).json({ message: "Invalid userId" });
+    }
+
+    // 1️⃣ Fetch user cart orders
+    const customer = await Customers.findById(userId);
+    const cartOrders = customer?.orders || [];
+
+    // 2️⃣ Fetch all best-selling products
+    const bestSellers = await SubCategory.find({ bestSellers: true }).sort({ createdAt: -1 }).lean();
 
     if (!bestSellers || bestSellers.length === 0) {
         return res.status(404).json({ message: "No best-selling products found" });
     }
 
-    res.status(200).json(bestSellers);
+    // 3️⃣ Map products and attach cart count if exists
+    const productsWithCount = bestSellers.map((product) => {
+        const cartItem = cartOrders.find(
+            (o) => o.subCategory.toString() === product._id.toString()
+        );
+        return {
+            ...product,
+            count: cartItem ? cartItem.count : 0,
+        };
+    });
+
+    return res.status(200).json(
+        new ApiResponse(200, productsWithCount, "Best-selling products fetched successfully")
+    );
 });
+
 
 const allCategoriesSubProducts = asyncHandler(async (req, res) => {
     console.log("hello");

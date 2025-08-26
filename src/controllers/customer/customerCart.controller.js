@@ -732,7 +732,7 @@ export const createOrder = asyncHandler(async (req, res) => {
 
 
 const cancelOrder = asyncHandler(async (req, res) => {
-    const { userId, orderId } = req.params;
+    const { userId, orderId ,notes} = req.params;
 
     // Validate IDs
     if (!mongoose.Types.ObjectId.isValid(userId) || !mongoose.Types.ObjectId.isValid(orderId)) {
