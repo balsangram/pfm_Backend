@@ -138,6 +138,7 @@ const addToCart = asyncHandler(async (req, res) => {
 
 // 🛒 Delete item from cart
 const editToCart = asyncHandler(async (req, res) => {
+    console.log("🚀 ~  req.body:", req.body)
     const { userId, itemId } = req.params;
     let { count } = req.body; // expects { "count": 3 }
     console.log("🚀 ~ count:", count)
