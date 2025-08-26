@@ -10,8 +10,12 @@ import cloudinary from "../../utils/cloudinary.js"; // make sure you set this up
 
 const adminProfile = asyncHandler(async (req, res, next) => {
     try {
-        // 1️⃣ Get token from cookies
-        const token = req.cookies?.accessToken;
+        // 1️⃣ Get token from Authorization header (Bearer <token>)
+        let token = null;
+        if (req.headers.authorization && req.headers.authorization.startsWith("Bearer")) {
+            token = req.headers.authorization.split(" ")[1];
+        }
+
         if (!token) throw new ApiError(401, "Not authorized, token missing");
 
         // 2️⃣ Decode JWT to get userId
@@ -19,7 +23,6 @@ const adminProfile = asyncHandler(async (req, res, next) => {
 
         // 3️⃣ Extract actual MongoDB ObjectId
         const adminId = decoded.userId;
-        // console.log("🚀 ~ adminId:", adminId);
 
         // 4️⃣ Fetch admin by ID
         const admin = await Admin.findById(adminId).select("-password");
@@ -32,6 +35,7 @@ const adminProfile = asyncHandler(async (req, res, next) => {
         next(error);
     }
 });
+
 
 // const adminUpdateProfile = asyncHandler(async (req, res) => {
 //     const { firstName, lastName, phone, email } = req.body;

@@ -116,7 +116,12 @@ const searchItem = asyncHandler(async (req, res) => {
         throw new ApiError(400, "Item name is required");
     }
 
-    const items = await SubCategory.find({ name: { $regex: name, $options: "i" } });
+    // const items = await SubCategory.find({ name: { $regex: name, $options: "i" } });
+    // Only fetch name and img fields
+    const items = await SubCategory.find(
+        { name: { $regex: name, $options: "i" } },
+        { name: 1, img: 1, _id: 0 } // projection: include name & img, exclude _id
+    );
 
     return res.status(200).json(new ApiResponse(200, items, "Items fetched successfully"));
 });

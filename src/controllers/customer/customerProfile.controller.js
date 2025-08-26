@@ -8,7 +8,8 @@ import contactUsModel from "../../models/contactUs.model.js";
 
 const customerProfile = asyncHandler(async (req, res) => {
     const { userId } = req.params;
-
+    const objectId = new mongoose.Types.ObjectId(userId);
+    userId = objectId;
     // Validate userId
     if (!userId || !mongoose.Types.ObjectId.isValid(userId)) {
         throw new ApiError(400, "Invalid user ID");
@@ -33,7 +34,8 @@ const customerProfile = asyncHandler(async (req, res) => {
 const updateProfile = asyncHandler(async (req, res) => {
     const { userId } = req.params;
     const { name, email } = req.body;
-
+    const objectId = new mongoose.Types.ObjectId(userId);
+    userId = objectId
     // Validate userId
     if (!userId || !mongoose.Types.ObjectId.isValid(userId)) {
         throw new ApiError(400, "Invalid user ID");
@@ -83,7 +85,8 @@ const updateProfile = asyncHandler(async (req, res) => {
 
 const deleteCustomer = asyncHandler(async (req, res) => {
     const { userId } = req.params;
-
+    const objectId = new mongoose.Types.ObjectId(userId);
+    userId = objectId;
     // Validate userId
     if (!userId || !mongoose.Types.ObjectId.isValid(userId)) {
         throw new ApiError(400, "Invalid user ID");
@@ -103,7 +106,8 @@ const deleteCustomer = asyncHandler(async (req, res) => {
 
 const customerLogout = asyncHandler(async (req, res) => {
     const { userId } = req.params;
-
+    const objectId = new mongoose.Types.ObjectId(userId);
+    userId = objectId;
     // Validate userId
     if (!userId || !mongoose.Types.ObjectId.isValid(userId)) {
         throw new ApiError(400, "Invalid user ID");
@@ -125,7 +129,8 @@ const customerLogout = asyncHandler(async (req, res) => {
 
 const displayAddress = asyncHandler(async (req, res) => {
     const { userId } = req.params;
-
+    const objectId = new mongoose.Types.ObjectId(userId);
+    userId = objectId;
     // Validate userId
     if (!userId || !mongoose.Types.ObjectId.isValid(userId)) {
         throw new ApiError(400, "Invalid user ID");
@@ -145,6 +150,8 @@ const displayAddress = asyncHandler(async (req, res) => {
 
 const addAddress = asyncHandler(async (req, res) => {
     const { userId } = req.params;
+    const objectId = new mongoose.Types.ObjectId(userId);
+    userId = objectId;
     let { houseNo, street, city, state, pincode, type, latitude, longitude } = req.body;
 
     // Validate userId
@@ -226,6 +233,10 @@ const addAddress = asyncHandler(async (req, res) => {
 
 const editAddress = asyncHandler(async (req, res) => {
     const { userId, addressId } = req.params;
+    const objectId1 = new mongoose.Types.ObjectId(userId);
+    const objectId2 = new mongoose.Types.ObjectId(addressId);
+    userId = objectId1;
+    addressId = objectId2;
     const { houseNo, street, city, state, pincode, type, latitude, longitude } = req.body;
 
     // Validate userId and addressId
@@ -302,6 +313,10 @@ const editAddress = asyncHandler(async (req, res) => {
 
 const deleteAddress = asyncHandler(async (req, res) => {
     const { userId, addressId } = req.params;
+    const objectId1 = new mongoose.Types.ObjectId(userId);
+    const objectId2 = new mongoose.Types.ObjectId(addressId);
+    userId = objectId1;
+    addressId = objectId2;
 
     // Validate userId and addressId
     if (!userId || !mongoose.Types.ObjectId.isValid(userId)) {
