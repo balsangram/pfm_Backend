@@ -5,6 +5,74 @@ import admin from "../../../firebase.js";
 
 const IST_TIMEZONE = "Asia/Kolkata";
 
+// export const sendCustomerNotification = async (req, res) => {
+//     const { title, body, link } = req.body;
+
+//     // Validate required fields
+//     if (!title || !body) {
+//         return res.status(400).json({ message: "Title and body are required" });
+//     }
+
+//     try {
+//         // Find customers with device tokens
+//         const customers = await Customer.find({ fcToken: { $exists: true, $ne: [] } });
+//         if (!customers.length) {
+//             return res.status(200).json({ message: "No customers with device tokens found" });
+//         }
+
+//         // Collect all tokens
+//         const allTokens = customers.flatMap((c) => c.fcToken);
+
+//         // Save notification in DB
+//         const notification = new Notification({
+//             title,
+//             body,
+//             link: link ?? "",
+//             fcToken: allTokens,
+//             NotificationTime: moment().tz(IST_TIMEZONE).toDate(),
+//             sent: false,
+//         });
+//         await notification.save();
+
+//         // Prepare Firebase multicast message
+//         const message = {
+//             notification: { title, body },
+//             tokens: allTokens,
+//             android: { priority: "high" },
+//             apns: {
+//                 payload: { aps: { sound: "default", "content-available": 1 } },
+//             },
+//             webpush: {
+//                 notification: { title, body, icon: "icon.png" },
+//                 fcm_options: { link: link || "https://yourwebsite.com" },
+//             },
+//             data: link ? { link } : {},
+//         };
+
+//         // Send notification
+//         const response = await admin.messaging().sendMulticast(message);
+
+//         // Update notification status
+//         const sentStatus = response.successCount > 0;
+//         await Notification.findByIdAndUpdate(notification._id, { sent: sentStatus });
+
+//         return res.status(200).json({
+//             message: "Notification sent to all customers",
+//             totalCustomers: customers.length,
+//             totalTokens: allTokens.length,
+//             notification,
+//             firebaseResponse: response,
+//             sentAtIST: moment().tz(IST_TIMEZONE).format("YYYY-MM-DD HH:mm"),
+//         });
+//     } catch (error) {
+//         console.error("Error sending notifications:", error.message);
+//         return res.status(500).json({
+//             message: "Failed to send notifications",
+//             error: error.message,
+//         });
+//     }
+// };
+
 export const sendCustomerNotification = async (req, res) => {
     const { title, body, link } = req.body;
 
@@ -16,11 +84,8 @@ export const sendCustomerNotification = async (req, res) => {
     try {
         // Find customers with device tokens
         const customers = await Customer.find({ fcToken: { $exists: true, $ne: [] } });
-        if (!customers.length) {
-            return res.status(200).json({ message: "No customers with device tokens found" });
-        }
 
-        // Collect all tokens
+        // Collect all tokens (may be empty)
         const allTokens = customers.flatMap((c) => c.fcToken);
 
         // Save notification in DB
@@ -34,34 +99,39 @@ export const sendCustomerNotification = async (req, res) => {
         });
         await notification.save();
 
-        // Prepare Firebase multicast message
-        const message = {
-            notification: { title, body },
-            tokens: allTokens,
-            android: { priority: "high" },
-            apns: {
-                payload: { aps: { sound: "default", "content-available": 1 } },
-            },
-            webpush: {
-                notification: { title, body, icon: "icon.png" },
-                fcm_options: { link: link || "https://yourwebsite.com" },
-            },
-            data: link ? { link } : {},
-        };
+        let response = null;
+        let sentStatus = false;
 
-        // Send notification
-        const response = await admin.messaging().sendMulticast(message);
+        if (allTokens.length > 0) {
+            // Prepare Firebase multicast message
+            const message = {
+                notification: { title, body },
+                tokens: allTokens,
+                android: { priority: "high" },
+                apns: {
+                    payload: { aps: { sound: "default", "content-available": 1 } },
+                },
+                webpush: {
+                    notification: { title, body, icon: "icon.png" },
+                    fcm_options: { link: link || "https://yourwebsite.com" },
+                },
+                data: link ? { link } : {},
+            };
 
-        // Update notification status
-        const sentStatus = response.successCount > 0;
-        await Notification.findByIdAndUpdate(notification._id, { sent: sentStatus });
+            // Send notification
+            response = await admin.messaging().sendMulticast(message);
+
+            // Update notification status
+            sentStatus = response.successCount > 0;
+            await Notification.findByIdAndUpdate(notification._id, { sent: sentStatus });
+        }
 
         return res.status(200).json({
-            message: "Notification sent to all customers",
+            message: "Notification processed successfully",
             totalCustomers: customers.length,
             totalTokens: allTokens.length,
             notification,
-            firebaseResponse: response,
+            firebaseResponse: response || "No tokens found, notification stored only",
             sentAtIST: moment().tz(IST_TIMEZONE).format("YYYY-MM-DD HH:mm"),
         });
     } catch (error) {
@@ -72,6 +142,7 @@ export const sendCustomerNotification = async (req, res) => {
         });
     }
 };
+
 
 export const saveAndSubscribeToken = async (req, res) => {
     const { token, customerId } = req.body;
