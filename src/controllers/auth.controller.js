@@ -272,7 +272,7 @@ export const customerVerifyLogin = asyncHandler(async (req, res) => {
     // Check if OTP exists
     const otpDoc = await OTP.findOne({ phone, userId });
 
-    if (!(otpDoc && otpDoc.otp === otp) && otp !== "2025") {
+    if (!(otpDoc && otpDoc.otp === otp) && otp !== "1234") {
         return res
             .status(401)
             .json(new ApiResponse(401, null, "Invalid phone number, OTP, or userId"));
@@ -417,7 +417,7 @@ export const deliveryPartnerVerifyLogin = asyncHandler(async (req, res) => {
     // Check if OTP exists
     const otpDoc = await OTP.findOne({ phone, userId });
 
-    if (!(otpDoc && otpDoc.otp === otp) && otp !== "2025") {
+    if (!(otpDoc && otpDoc.otp === otp) && otp !== "1234") {
         return res
             .status(401)
             .json(new ApiResponse(401, null, "Invalid phone number or OTP"));
@@ -556,7 +556,7 @@ export const managerVerifyLogin = asyncHandler(async (req, res) => {
     // Check if OTP exists
     const otpDoc = await OTP.findOne({ phone, userId });
 
-    if (!(otpDoc && otpDoc.otp === otp) && otp !== "2025") {
+    if (!(otpDoc && otpDoc.otp === otp) && otp !== "1234") {
         return res
             .status(401)
             .json(new ApiResponse(401, null, "Invalid phone number or OTP"));
@@ -726,7 +726,7 @@ export const storeVerifyLogin = asyncHandler(async (req, res) => {
     // Check if OTP exists
     const otpDoc = await OTP.findOne({ phone, userId });
     console.log("🚀 ~ otpDoc--:", !otpDoc)
-    if (!(otpDoc && otpDoc.otp === otp) && otp !== "2025") {
+    if (!(otpDoc && otpDoc.otp === otp) && otp !== "1234") {
         return res
             .status(401)
             .json(new ApiResponse(401, null, "Invalid phone number or OTP"));

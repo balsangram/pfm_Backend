@@ -141,7 +141,7 @@ const editToCart = asyncHandler(async (req, res) => {
     console.log("🚀 ~  req.body:", req.body)
     const { userId, itemId } = req.params;
     let { count } = req.body; // expects { "count": 3 }
-    // console.log("🚀 ~ count:", count)
+    console.log("🚀 ~ count:", count)
 
     // Validate IDs
     if (!mongoose.Types.ObjectId.isValid(userId) || !mongoose.Types.ObjectId.isValid(itemId)) {

@@ -54,6 +54,7 @@ router.get("/allCategories", customerCategoriesController.allCategories);
 
 // 2. display all bestSelling products ===
 router.get("/bestSellingProducts", customerCategoriesController.bestSellingProducts);
+router.get("/bestSellingProducts/:id", customerCategoriesController.bestSellingProductsById);
 
 // 3. in category under how many sub category cards are here all display
 router.get("/allCategories-subProducts/:id", customerCategoriesController.allCategoriesSubProducts);

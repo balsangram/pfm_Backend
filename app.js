@@ -15,7 +15,8 @@ const corsOptions = {
     origin: ['http://localhost:5173', 'http://localhost:3000', 'http://localhost:3001'],
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
+    // allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
+    allowedHeaders: ["*"],
 };
 
 app.use(cors(corsOptions));
@@ -23,10 +24,10 @@ app.use(express.json());
 app.use(cookieParser())
 
 // Add request logging middleware
-app.use((req, res, next) => {
-    console.log(`📥 ${req.method} ${req.path} - ${new Date().toISOString()}`);
-    next();
-});
+// app.use((req, res, next) => {
+//     console.log(`📥 ${req.method} ${req.path} - ${new Date().toISOString()}`);
+//     next();
+// });
 
 // Example route
 app.get('/', (req, res) => {

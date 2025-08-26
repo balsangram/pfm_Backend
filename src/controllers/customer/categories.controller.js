@@ -24,6 +24,18 @@ const bestSellingProducts = asyncHandler(async (req, res) => {
     res.status(200).json(bestSellers);
 });
 
+const bestSellingProductsById = asyncHandler(async (req, res) => {
+    const {id} = req.body;
+    // Fetch all subcategories where bestSellers is true
+    const bestSellers = await SubCategory.find({ bestSellers: true }).sort({ createdAt: -1 }); // newest first
+
+    if (!bestSellers || bestSellers.length === 0) {
+        return res.status(404).json({ message: "No best-selling products found" });
+    }
+
+    res.status(200).json(bestSellers);
+});
+
 const allCategoriesSubProducts = asyncHandler(async (req, res) => {
     console.log("hello");
 
@@ -171,6 +183,7 @@ export const customerCategoriesController = {
     allCategories,
 
     bestSellingProducts,
+    bestSellingProductsById,
 
     allCategoriesSubProducts,
     categoriesTypes,
