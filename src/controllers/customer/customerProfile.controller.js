@@ -8,8 +8,8 @@ import contactUsModel from "../../models/contactUs.model.js";
 
 const customerProfile = asyncHandler(async (req, res) => {
     const { userId } = req.params;
-    const objectId = new mongoose.Types.ObjectId(userId);
-    userId = objectId;
+    // const objectId = new mongoose.Types.ObjectId(userId);
+    // userId = objectId;
     // Validate userId
     if (!userId || !mongoose.Types.ObjectId.isValid(userId)) {
         throw new ApiError(400, "Invalid user ID");

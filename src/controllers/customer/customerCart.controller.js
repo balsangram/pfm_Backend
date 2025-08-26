@@ -233,9 +233,6 @@ const editToCart = asyncHandler(async (req, res) => {
     );
 });
 
-
-
-
 // const editToCart = asyncHandler(async (req, res) => {
 //     const { userId, itemId } = req.params;
 //     let { count } = req.body; // expects { "count": 3 }
@@ -353,7 +350,6 @@ const deleteToCart = asyncHandler(async (req, res) => {
     );
 });
 
-
 // const deleteToCart = asyncHandler(async (req, res) => {
 //     const { userId, itemId } = req.params; // itemId = subCategoryId
 //     console.log("🚀 ~ req.params:", req.params);
@@ -402,7 +398,7 @@ const deleteToCart = asyncHandler(async (req, res) => {
 // order
 
 // 🟢 Get Order History
-export const orderHistory = asyncHandler(async (req, res) => {
+const orderHistory = asyncHandler(async (req, res) => {
     const { userId } = req.params;
 
     if (!userId || !mongoose.Types.ObjectId.isValid(userId)) {
@@ -417,7 +413,6 @@ export const orderHistory = asyncHandler(async (req, res) => {
         .status(200)
         .json(new ApiResponse(200, orders, "Order history fetched successfully"));
 });
-
 
 // const createOrder = asyncHandler(async (req, res) => {
 //     console.log("🚀 ~ req.params:", req.params);
@@ -640,7 +635,7 @@ export const orderHistory = asyncHandler(async (req, res) => {
 //         .json(new ApiResponse(201, { order: newOrder, nearestStore }, "Order created successfully"));
 // });
 
-export const createOrder = asyncHandler(async (req, res) => {
+const createOrder = asyncHandler(async (req, res) => {
     console.log("🚀 ~ req.params:", req.params);
     console.log(req.body, "body");
 
@@ -765,8 +760,6 @@ export const createOrder = asyncHandler(async (req, res) => {
         .json(new ApiResponse(201, { order: newOrder, nearestStore }, "Order created successfully"));
 });
 
-
-
 const cancelOrder = asyncHandler(async (req, res) => {
     const { userId, orderId, notes } = req.params;
 
@@ -837,8 +830,6 @@ const totalProductAmount = asyncHandler(async (req, res) => {
         )
     );
 });
-
-
 
 export const customerCartController = {
     displayCartDetails,
