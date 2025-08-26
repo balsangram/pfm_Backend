@@ -36,42 +36,27 @@ const adminProfile = asyncHandler(async (req, res, next) => {
     }
 });
 
-
-// const adminUpdateProfile = asyncHandler(async (req, res) => {
-//     const { firstName, lastName, phone, email } = req.body;
-
-//     // Get admin ID from JWT token
-//     const token = req.cookies?.accessToken;
-//     if (!token) throw new ApiError(401, "Not authorized, token missing");
-
-//     const decoded = jwt.verify(token, ACCESS_TOKEN_SECRET);
-//     const adminId = decoded.userId;
-
-//     // Update admin profile
-//     const updatedAdmin = await Admin.findByIdAndUpdate(
-//         adminId,
-//         { firstName, lastName, phone, email }, // ✅ use correct fields
-//         { new: true, runValidators: true }
-//     ).select("-password");
-
-//     if (!updatedAdmin) {
-//         throw new ApiError(404, "Admin not found");
-//     }
-
-//     return res.status(200).json(
-//         new ApiResponse(200, updatedAdmin, "Profile updated successfully")
-//     );
-// });
-
 const adminUpdateProfile = asyncHandler(async (req, res) => {
     const { firstName, lastName, phone, email } = req.body;
+    // 1️⃣ Get token from Authorization header (Bearer <token>)
+    let token = null;
+    if (req.headers.authorization && req.headers.authorization.startsWith("Bearer")) {
+        token = req.headers.authorization.split(" ")[1];
+    }
 
-    // Get admin ID from JWT token
-    const token = req.cookies?.accessToken;
     if (!token) throw new ApiError(401, "Not authorized, token missing");
-
+    // 2️⃣ Decode JWT to get userId
     const decoded = jwt.verify(token, ACCESS_TOKEN_SECRET);
+
+    // 3️⃣ Extract actual MongoDB ObjectId
     const adminId = decoded.userId;
+
+    // ✅ Get adminId from headers
+
+    console.log("🚀 ~ adminId:", adminId);
+    if (!adminId) {
+        throw new ApiError(400, "Admin ID missing in headers");
+    }
 
     let updateData = { firstName, lastName, phone, email };
 
@@ -84,7 +69,7 @@ const adminUpdateProfile = asyncHandler(async (req, res) => {
         updateData.img = uploadedImg.secure_url; // store URL in DB
     }
 
-    // Update admin profile
+    // ✅ Update admin profile
     const updatedAdmin = await Admin.findByIdAndUpdate(
         adminId,
         updateData,
@@ -100,32 +85,70 @@ const adminUpdateProfile = asyncHandler(async (req, res) => {
     );
 });
 
+// const adminDeleteAccount = asyncHandler(async (req, res) => {
+//     // 1️⃣ Get JWT from cookies
+//     const token = req.cookies?.accessToken;
+//     if (!token) throw new ApiError(401, "Not authorized, token missing");
+
+//     // 2️⃣ Decode token to get adminId
+//     const decoded = jwt.verify(token, ACCESS_TOKEN_SECRET);
+//     const adminId = decoded.userId;
+//     console.log("🚀 ~ adminId:", adminId)
+
+//     // 3️⃣ Delete admin account
+//     const deletedAdmin = await Admin.findByIdAndDelete(adminId);
+
+//     if (!deletedAdmin) {
+//         throw new ApiError(404, "Admin not found");
+//     }
+
+//     // 4️⃣ Clear the access token cookie
+//     res.clearCookie("accessToken", {
+//         httpOnly: true,
+//         secure: process.env.NODE_ENV === "production",
+//         sameSite: "strict",
+//     });
+
+//     // 5️⃣ Return response
+//     return res.status(200).json(
+//         new ApiResponse(200, null, "Admin account deleted successfully")
+//     );
+// });
 
 const adminDeleteAccount = asyncHandler(async (req, res) => {
-    // 1️⃣ Get JWT from cookies
-    const token = req.cookies?.accessToken;
+    // ✅ Get adminId directly from headers
+    let token = null;
+    if (req.headers.authorization && req.headers.authorization.startsWith("Bearer")) {
+        token = req.headers.authorization.split(" ")[1];
+    }
+
     if (!token) throw new ApiError(401, "Not authorized, token missing");
-
-    // 2️⃣ Decode token to get adminId
+    // 2️⃣ Decode JWT to get userId
     const decoded = jwt.verify(token, ACCESS_TOKEN_SECRET);
-    const adminId = decoded.userId;
-    console.log("🚀 ~ adminId:", adminId)
 
-    // 3️⃣ Delete admin account
+    // 3️⃣ Extract actual MongoDB ObjectId
+    const adminId = decoded.userId;
+    if (!adminId) {
+        throw new ApiError(400, "Admin ID missing in headers");
+    }
+
+    console.log("🚀 ~ adminId:", adminId);
+
+    // 1️⃣ Delete admin account
     const deletedAdmin = await Admin.findByIdAndDelete(adminId);
 
     if (!deletedAdmin) {
         throw new ApiError(404, "Admin not found");
     }
 
-    // 4️⃣ Clear the access token cookie
+    // 2️⃣ Clear the access token cookie (optional)
     res.clearCookie("accessToken", {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
         sameSite: "strict",
     });
 
-    // 5️⃣ Return response
+    // 3️⃣ Return response
     return res.status(200).json(
         new ApiResponse(200, null, "Admin account deleted successfully")
     );
@@ -133,15 +156,20 @@ const adminDeleteAccount = asyncHandler(async (req, res) => {
 
 const adminChangePassword = asyncHandler(async (req, res) => {
     const { currentPassword, newPassword } = req.body;
+    let token = null;
+    if (req.headers.authorization && req.headers.authorization.startsWith("Bearer")) {
+        token = req.headers.authorization.split(" ")[1];
+    }
 
-    // Get admin ID from JWT token
-    const token = req.cookies?.accessToken;
     if (!token) throw new ApiError(401, "Not authorized, token missing");
-
+    // 2️⃣ Decode JWT to get userId
     const decoded = jwt.verify(token, ACCESS_TOKEN_SECRET);
-    // console.log("🚀 ~ decoded:", decoded)
+
+    // 3️⃣ Extract actual MongoDB ObjectId
     const adminId = decoded.userId;
-    // console.log("🚀 ~ adminId:", adminId)
+    if (!adminId) {
+        throw new ApiError(400, "Admin ID missing in headers");
+    }
 
     // Find admin by ID
     const admin = await Admin.findById(adminId);
@@ -164,9 +192,40 @@ const adminChangePassword = asyncHandler(async (req, res) => {
     );
 });
 
+
 const adminLogout = asyncHandler(async (req, res) => {
-    // Logic for admin logout
+    // 1️⃣ Get admin ID from headers (if using header-based auth)
+    let token = null;
+    if (req.headers.authorization && req.headers.authorization.startsWith("Bearer")) {
+        token = req.headers.authorization.split(" ")[1];
+    }
+
+    if (!token) throw new ApiError(401, "Not authorized, token missing");
+    // 2️⃣ Decode JWT to get userId
+    const decoded = jwt.verify(token, ACCESS_TOKEN_SECRET);
+
+    // 3️⃣ Extract actual MongoDB ObjectId
+    const adminId = decoded.userId;
+    if (!adminId) {
+        throw new ApiError(400, "Admin ID missing in headers");
+    }
+
+    // 2️⃣ Remove refresh token from DB (if you store it)
+    await Admin.findByIdAndUpdate(adminId, { refreshToken: null });
+
+    // 3️⃣ Clear the access token cookie
+    res.clearCookie("accessToken", {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "strict",
+    });
+
+    // 4️⃣ Return response
+    return res.status(200).json(
+        new ApiResponse(200, null, "Admin logged out successfully")
+    );
 });
+
 
 
 
