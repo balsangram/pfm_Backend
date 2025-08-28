@@ -23,8 +23,9 @@ import { couponsController } from "../controllers/admin/coupons.controller.js";
 // import { contactUsController } from "../controllers/admin/contactUs.controller.js";
 import { contactUsController } from "../controllers/admin/contactUs.controller.js";
 // import { contactUsController } from "../controllers/admin/contactUS.controller.js";
-
+import { createDeliveryPartner } from "../controllers/shared/deliveryPartnerManagement.controller.js"
 // import { contactUsController } from "../controllers/admin/contactUS.controller.js";
+
 
 const router = Router();
 
@@ -58,6 +59,7 @@ router.post("/meat-centers/update-phone-numbers", MeatCenterController.updateSto
 router.get("/delivery-partners", DeliveryPartnerController.getAllDeliveryPartners);
 router.get("/delivery-partners/:id", DeliveryPartnerController.getDeliveryPartnerById);
 router.post("/delivery-partners", DeliveryPartnerController.createDeliveryPartner);
+// router.post("/delivery-partners", createDeliveryPartner);
 router.patch("/delivery-partners/:id", DeliveryPartnerController.updateDeliveryPartnerStatus);
 router.delete("/delivery-partners/:id", DeliveryPartnerController.deleteDeliveryPartner);
 router.patch("/update-delevery-partners/:id", DeliveryPartnerController.editDeleveryPArtner);

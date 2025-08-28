@@ -194,10 +194,12 @@ const getAllDeliveryPartners = asyncHandler(async (req, res) => {
 // Get delivery partner by ID
 export const getDeliveryPartnerById = asyncHandler(async (req, res) => {
     const { id } = req.params;
+    console.log("🚀 ~ req.params:", req.params)
 
     const deliveryPartner = await DeliveryPartner.findById(id)
         .select('-__v')
         .populate('assignedOrders', 'orderId status totalAmount customerAddress deliveryAddress createdAt');
+    console.log("🚀 ~ deliveryPartner:", deliveryPartner)
 
     if (!deliveryPartner) {
         return res.status(404).json(

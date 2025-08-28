@@ -822,8 +822,10 @@ const cancelOrder = asyncHandler(async (req, res) => {
 
     // Update status and add cancellation note
     order.status = "cancelled";
-    order.cancellationNote = notes; // ✅ always required now
+    order.notes = notes; // ✅ always required now
+    console.log("🚀 ~ notes:", notes)
     await order.save();
+    console.log("🚀 ~ order:", order)
 
     res.status(200).json({
         message: "Order cancelled successfully",
