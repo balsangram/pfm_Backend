@@ -5,19 +5,18 @@ import { asyncHandler } from "../../utils/asyncHandler.js";
 // Get all orders with full details
 const getAllOrders = asyncHandler(async (req, res) => {
     const orders = await Order.find()
-        .populate("customer")           // full customer details
-        .populate("deliveryPartner")    // full delivery partner details
-        .populate("pickedUpBy")         // full pickedUpBy details
-        .populate("store")              // full store details
-        .populate("manager")            // full manager details
-        .sort({ createdAt: -1 });       // latest orders first
+        .populate({ path: "customer", select: "name" })
+        .populate({ path: "deliveryPartner", select: "name" })
+        .populate({ path: "pickedUpBy", select: "name" })
+        .populate({ path: "store", select: "name" })
+        .populate({ path: "manager", select: "name" })
+        .sort({ createdAt: -1 });
 
     return res.status(200).json(
-        new ApiResponse(200, {
-            orders
-        }, "All orders retrieved successfully")
+        new ApiResponse(200, { orders }, "All orders retrieved successfully")
     );
 });
+
 
 export const AdminOrderController = {
     getAllOrders

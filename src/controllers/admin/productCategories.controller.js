@@ -280,7 +280,6 @@ const createTypeCategory = asyncHandler(async (req, res) => {
     );
 });
 
-
 const updateTypeCategory = asyncHandler(async (req, res) => {
     const { id } = req.params; // typeCategoryId
     const { name } = req.body;
@@ -329,7 +328,6 @@ const updateTypeCategory = asyncHandler(async (req, res) => {
         new ApiResponse(200, typeCategory, "Type category updated successfully")
     );
 });
-
 
 // const deleteTypeCategory = asyncHandler(async (req, res) => {
 //     const { id, categoryId } = req.params;
@@ -789,7 +787,6 @@ const updateSubProductCategory = asyncHandler(async (req, res) => {
 //     );
 // });
 
-
 const deleteSubProductCategory = asyncHandler(async (req, res) => {
     const { id } = req.params;
 
@@ -817,7 +814,6 @@ const deleteSubProductCategory = asyncHandler(async (req, res) => {
         new ApiResponse(200, null, "Subcategory deleted successfully")
     );
 });
-
 
 const getAllDetailsOfSubCategoriesProduct = asyncHandler(async (req, res) => {
     const { id } = req.params;
