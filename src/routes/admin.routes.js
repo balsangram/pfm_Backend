@@ -24,6 +24,7 @@ import { couponsController } from "../controllers/admin/coupons.controller.js";
 import { contactUsController } from "../controllers/admin/contactUs.controller.js";
 // import { contactUsController } from "../controllers/admin/contactUS.controller.js";
 import { createDeliveryPartner } from "../controllers/shared/deliveryPartnerManagement.controller.js"
+import { AdminOrderController } from "../controllers/admin/order.controller.js";
 // import { contactUsController } from "../controllers/admin/contactUS.controller.js";
 
 
@@ -120,6 +121,6 @@ router.patch("/contact-us/:id", contactUsController.updateContact);
 router.delete("/contact-us/:id", contactUsController.deleteContact);
 
 // order 
-router.get("/display-order" , )
+router.get("/display-order", AdminOrderController.getAllOrders)
 
 export default router;
