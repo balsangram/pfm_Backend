@@ -833,6 +833,27 @@ const getAllDetailsOfSubCategoriesProduct = asyncHandler(async (req, res) => {
     res.status(200).json(new ApiResponse(200, subCategory, "Subcategory details fetched successfully"));
 });
 
+// Migration endpoint to add quantity field to existing subcategories
+const migrateQuantityField = asyncHandler(async (req, res) => {
+    try {
+        // Find all subcategories without quantity field and set default value
+        const result = await SubCategory.updateMany(
+            { quantity: { $exists: false } },
+            { $set: { quantity: 0 } }
+        );
+
+        res.status(200).json(
+            new ApiResponse(200, { 
+                modifiedCount: result.modifiedCount,
+                message: `Updated ${result.modifiedCount} subcategories with default quantity`
+            }, "Quantity field migration completed successfully")
+        );
+    } catch (error) {
+        console.error("Migration error:", error);
+        throw new ApiError(500, "Migration failed");
+    }
+});
+
 export const ProductCategoryController = {
     // categories 
     getProductCategories,
@@ -850,4 +871,5 @@ export const ProductCategoryController = {
     updateSubProductCategory,
     deleteSubProductCategory,
     getAllDetailsOfSubCategoriesProduct,
+    migrateQuantityField
 };

@@ -24,6 +24,16 @@ import {
     getOrderCounts,
     testEndpoint
 } from "../controllers/manager/liveOrders.controller.js";
+// Add inventory management handlers
+import {
+    getInventoryCategories,
+    getInventoryByCategory,
+    getInventoryByTypeCategory,
+    updateProductQuantity,
+    getLowStockProducts,
+    getOutOfStockProducts,
+    bulkUpdateQuantities
+} from "../controllers/manager/inventory.controller.js";
 // Add shared delivery partner management handlers for document verification
 import {
     createDeliveryPartner,
@@ -167,5 +177,14 @@ router.patch("/store",
     validateRequest(updateStoreSchema, 'body'),
     updateStoreDetails
 );
+
+// Inventory Management
+router.get("/inventory", getInventoryCategories);
+router.get("/inventory/category/:id", getInventoryByCategory);
+router.get("/inventory/type-category/:id", getInventoryByTypeCategory);
+router.patch("/inventory/product/:id/quantity", updateProductQuantity);
+router.get("/inventory/low-stock", getLowStockProducts);
+router.get("/inventory/out-of-stock", getOutOfStockProducts);
+router.patch("/inventory/bulk-update", bulkUpdateQuantities);
 
 export default router;

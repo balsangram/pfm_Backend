@@ -102,6 +102,9 @@ router.delete(
 
 router.get("/sub-product-categories-details/:id", ProductCategoryController.getAllDetailsOfSubCategoriesProduct);
 
+// Migration endpoint for quantity field
+router.post("/migrate-quantity-field", ProductCategoryController.migrateQuantityField);
+
 // coupons 
 
 router.get("/coupons", couponsController.displayCoupons)
