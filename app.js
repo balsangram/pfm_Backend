@@ -25,14 +25,14 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(cookieParser())
 
 // Add request logging middleware
-app.use((req, res, next) => {
-    console.log(`📥 ${req.method} ${req.path} - ${new Date().toISOString()}`);
-    console.log('🔍 Request headers:', req.headers);
-    console.log('🔍 Request body:', req.body);
-    console.log('🔍 Request body type:', typeof req.body);
-    console.log('🔍 Request body keys:', req.body ? Object.keys(req.body) : 'No body');
-    next();
-});
+// app.use((req, res, next) => {
+//     console.log(`📥 ${req.method} ${req.path} - ${new Date().toISOString()}`);
+//     console.log('🔍 Request headers:', req.headers);
+//     console.log('🔍 Request body:', req.body);
+//     console.log('🔍 Request body type:', typeof req.body);
+//     console.log('🔍 Request body keys:', req.body ? Object.keys(req.body) : 'No body');
+//     next();
+// });
 
 // Example route
 app.get('/', (req, res) => {
