@@ -36,7 +36,7 @@ app.use((req, res, next) => {
 
 // Example route
 app.get('/', (req, res) => {
-    res.send('Server is running! 26-08-2025 3.36pm');
+    res.send('Server is running! 28-08-2025 3.36pm');
 });
 
 app.get('/api/example', (req, res) => {
