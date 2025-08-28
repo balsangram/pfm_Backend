@@ -375,7 +375,7 @@ export const migrateDeliveryPartners = asyncHandler(async (req, res) => {
 
 export const getDeliveryPartners = asyncHandler(async (req, res) => {
     const managerId = req.user._id;
-   
+
     // ✅ Get manager with storeId
     const manager = await Manager.findById(managerId).select("store");
     // console.log("🚀 ~ manager:", manager)

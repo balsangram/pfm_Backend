@@ -63,8 +63,8 @@ const allowedMimeTypes = [
 ];
 
 // Use memory storage (keeps files in RAM, gives you file.buffer)
-const storage = multer.memoryStorage();
-console.log("🚀 ~ storage:", storage)
+// const storage = multer.memoryStorage();
+// console.log("🚀 ~ storage:", storage)
 
 // File filter function
 const fileFilter = (req, file, cb) => {
@@ -77,7 +77,7 @@ const fileFilter = (req, file, cb) => {
 
 // Set up Multer instance
 export const upload = multer({
-    storage, // 👈 memory storage instead of disk
+    // storage, // 👈 memory storage instead of disk
     limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
     fileFilter,
 });
