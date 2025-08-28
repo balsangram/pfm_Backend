@@ -23,7 +23,7 @@ const displayCartDetails = asyncHandler(async (req, res) => {
     const customer = await Customer.findById(userId)
         .populate({
             path: "orders.subCategory",
-            select: "name img price discount discountPrice", // only required fields
+            select: "name img price discount discountPrice description weight", // only required fields
         })
         .select("name phone wallet orders");
 
