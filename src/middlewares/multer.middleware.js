@@ -49,6 +49,40 @@
 // });
 
 
+// import multer from "multer";
+
+// // Allowed file types
+// const allowedMimeTypes = [
+//     "image/jpeg",
+//     "image/png",
+//     "application/pdf",
+//     "image/webp",
+//     "image/avif",
+//     "image/heic",
+//     "image/heif",
+// ];
+
+// // Use memory storage (keeps files in RAM, gives you file.buffer)
+// // const storage = multer.memoryStorage();
+// // console.log("🚀 ~ storage:", storage)
+
+// // File filter function
+// const fileFilter = (req, file, cb) => {
+//     if (allowedMimeTypes.includes(file.mimetype)) {
+//         cb(null, true);
+//     } else {
+//         cb(new Error("Invalid file type. Only JPG, PNG, WEBP, AVIF, HEIC/HEIF, and PDF are allowed"), false);
+//     }
+// };
+
+// // Set up Multer instance
+// export const upload = multer({
+//     // storage, // 👈 memory storage instead of disk
+//     limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
+//     fileFilter,
+// });
+
+
 import multer from "multer";
 
 // Allowed file types
@@ -62,22 +96,26 @@ const allowedMimeTypes = [
     "image/heif",
 ];
 
-// Use memory storage (keeps files in RAM, gives you file.buffer)
-// const storage = multer.memoryStorage();
-// console.log("🚀 ~ storage:", storage)
+// ✅ Use memory storage (keeps files in RAM, gives you file.buffer)
+const storage = multer.memoryStorage();
 
 // File filter function
 const fileFilter = (req, file, cb) => {
     if (allowedMimeTypes.includes(file.mimetype)) {
         cb(null, true);
     } else {
-        cb(new Error("Invalid file type. Only JPG, PNG, WEBP, AVIF, HEIC/HEIF, and PDF are allowed"), false);
+        cb(
+            new Error(
+                "Invalid file type. Only JPG, PNG, WEBP, AVIF, HEIC/HEIF, and PDF are allowed"
+            ),
+            false
+        );
     }
 };
 
-// Set up Multer instance
+// ✅ Final Multer setup
 export const upload = multer({
-    // storage, // 👈 memory storage instead of disk
+    storage, // 👈 use memory storage
     limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
     fileFilter,
 });
