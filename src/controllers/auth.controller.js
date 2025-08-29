@@ -922,42 +922,72 @@ export const storeRefreshToken = asyncHandler(async (req, res) => {
 //     }
 // };
 
+// export const saveAndSubscribeToken = async (req, res) => {
+//     const { token } = req.body;
+//     console.log("🚀 ~ subscribeToken ~ req.body:", req.body);
+
+//     // Validate input
+//     if (!token || typeof token !== "string") {
+//         return res.status(400).json({ message: "Valid device token is required." });
+//     }
+
+//     try {
+//         // Subscribe token to "all" topic
+//         const response = await admin.messaging().subscribeToTopic(token, "all");
+
+//         if (!response || response.failureCount > 0) {
+//             const errorInfo =
+//                 response.errors?.[0]?.error || "Unknown error while subscribing.";
+//             console.log("❌ FCM Subscription Error:", errorInfo);
+
+//             return res.status(400).json({
+//                 message: "Failed to subscribe token to topic 'all'.",
+//                 error: errorInfo,
+//             });
+//         }
+
+//         console.log("✅ Token subscribed to 'all' topic:", response);
+
+//         return res.status(200).json({
+//             message: "Token subscribed to topic 'all' successfully.",
+//             firebaseResponse: response,
+//         });
+//     } catch (error) {
+//         console.error("🔥 Error in subscribeToken:", error);
+
+//         return res.status(500).json({
+//             message: "Internal server error occurred while subscribing token.",
+//             error: error.message || "Unexpected error",
+//         });
+//     }
+// };
+
+// ✅ Save & Subscribe Device Token to Firebase
 export const saveAndSubscribeToken = async (req, res) => {
     const { token } = req.body;
-    console.log("🚀 ~ subscribeToken ~ req.body:", req.body);
+    console.log("🚀 Token received:", token);
 
-    // Validate input
     if (!token || typeof token !== "string") {
         return res.status(400).json({ message: "Valid device token is required." });
     }
 
     try {
-        // Subscribe token to "all" topic
+        // ✅ Subscribe token to a topic "all"
         const response = await admin.messaging().subscribeToTopic(token, "all");
 
-        if (!response || response.failureCount > 0) {
-            const errorInfo =
-                response.errors?.[0]?.error || "Unknown error while subscribing.";
-            console.log("❌ FCM Subscription Error:", errorInfo);
-
+        if (response.failureCount > 0) {
             return res.status(400).json({
-                message: "Failed to subscribe token to topic 'all'.",
-                error: errorInfo,
+                message: "Failed to subscribe token",
+                error: response.errors[0].error,
             });
         }
 
-        console.log("✅ Token subscribed to 'all' topic:", response);
-
         return res.status(200).json({
-            message: "Token subscribed to topic 'all' successfully.",
+            message: "Token subscribed to 'all' topic successfully",
             firebaseResponse: response,
         });
     } catch (error) {
-        console.error("🔥 Error in subscribeToken:", error);
-
-        return res.status(500).json({
-            message: "Internal server error occurred while subscribing token.",
-            error: error.message || "Unexpected error",
-        });
+        console.error("🔥 Subscription Error:", error);
+        return res.status(500).json({ message: "Internal Server Error", error: error.message });
     }
 };
