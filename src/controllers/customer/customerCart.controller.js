@@ -649,6 +649,7 @@ const createOrder = asyncHandler(async (req, res) => {
 
     // 2️⃣ Fetch customer
     const customer = await Customer.findById(userId).populate("orders.subCategory");
+    console.log("🚀 ~ customer:", customer.wallet)
     if (!customer) throw new ApiError(404, "Customer not found");
     if (!customer.orders?.length) throw new ApiError(400, "Cart is empty");
 
@@ -708,19 +709,44 @@ const createOrder = asyncHandler(async (req, res) => {
     let totalAmount = orderItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
     console.log("🚀 ~ totalAmount:", totalAmount)
 
-    console.log(couponsId, "couponsId");
+    // console.log(couponsId, "couponsId");
 
     if (walletPoint > 0) {
-        totalAmount -= walletPoint;
+        console.log("🚀 ~ customer.wallet:", customer.wallet);
+        console.log("🚀 ~ walletPoint:", walletPoint);
+        if (totalAmount >= 500) {
+            if (customer.wallet >= walletPoint) {
+                console.log("🚀 ~ totalAmount (before):", totalAmount);
+
+                // Deduct wallet points from totalAmount
+                totalAmount -= walletPoint;
+
+                console.log("🚀 ~ totalAmount (after):", totalAmount);
+
+                // Deduct wallet points from customer wallet
+                await Customer.findByIdAndUpdate(
+                    userId,
+                    { $inc: { wallet: -walletPoint } }, // ✅ decrease wallet by walletPoint
+                    { new: true }
+                );
+            } else {
+                throw new Error("Insufficient wallet balance");
+            }
+        }
     } else if (couponsId) {
         const coupon = await Coupons.findById(couponsId);
-        console.log("🚀 ~ coupon:", coupon.discount)
-        let discountPercent = coupon.discount;
-        let discountAmount = (totalAmount * discountPercent) / 100;
         if (coupon) {
-            totalAmount -= discountAmount; // example
+            console.log("🚀 ~ coupon.discount:", coupon.discount);
+
+            let discountPercent = coupon.discount;
+            let discountAmount = (totalAmount * discountPercent) / 100;
+
+            totalAmount -= discountAmount;
+
+            console.log("🚀 ~ totalAmount (after coupon):", totalAmount);
         }
     }
+
 
     console.log("🚀 ~ totalAmount:", totalAmount)
 
@@ -832,7 +858,6 @@ const cancelOrder = asyncHandler(async (req, res) => {
         order
     });
 });
-
 
 const totalProductAmount = asyncHandler(async (req, res) => {
     const { userId } = req.params;
