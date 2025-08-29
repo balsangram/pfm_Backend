@@ -26,8 +26,7 @@ const deliveryPartnerSchema = new mongoose.Schema({
     store: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "Store",
-        required: false, // 👈 not required (optional)
-        // default: null    // 👈 optional: sets default as null if not provided
+        required: false // 👈 not required (optional)
     },
     // Document verification status
     documentStatus: {

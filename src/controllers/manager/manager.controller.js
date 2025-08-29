@@ -80,6 +80,10 @@ export const getOrders = asyncHandler(async (req, res) => {
     console.log('🔍 getOrders: Request user:', req.user);
     console.log('🔍 getOrders: Request query:', req.query);
 
+    console.log('🔍 getOrders: Starting order retrieval...');
+    console.log('🔍 getOrders: Request user:', req.user);
+    console.log('🔍 getOrders: Request query:', req.query);
+    
     const managerId = req.user._id;
     console.log('🔍 getOrders: Manager ID:', managerId);
 
@@ -138,6 +142,7 @@ export const getOrders = asyncHandler(async (req, res) => {
     const orders = await Order.find(filter)
         .populate('deliveryPartner', 'name phone')
         .populate('manager', 'firstName lastName phone')
+        .populate('manager', 'firstName lastName phone')
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(parseInt(limit))
@@ -178,6 +183,7 @@ export const getOrderById = asyncHandler(async (req, res) => {
     const order = await Order.findOne({ _id: id, store: manager.store })
         .populate('deliveryPartner', 'name phone')
         .populate('store', 'name location phone')
+        .populate('manager', 'firstName lastName phone')
         .populate('manager', 'firstName lastName phone')
         .select('-__v');
 
@@ -226,6 +232,10 @@ export const updateOrderStatus = asyncHandler(async (req, res) => {
         new ApiResponse(200, updatedOrder, "Order status updated successfully")
     );
 });
+
+
+// Migration function to update existing delivery partners with store field
+
 
 // Migration function to update existing delivery partners with store field
 export const migrateDeliveryPartners = asyncHandler(async (req, res) => {
@@ -421,6 +431,8 @@ export const getDeliveryPartnerById = asyncHandler(async (req, res) => {
 
 // CRUD handlers moved to shared/deliveryPartnerManagement.controller.js
 
+// CRUD handlers moved to shared/deliveryPartnerManagement.controller.js
+
 // Store Management
 export const getStoreDetails = asyncHandler(async (req, res) => {
     const managerId = req.user._id;
@@ -514,51 +526,52 @@ export const getDashboardStats = asyncHandler(async (req, res) => {
     );
 });
 
+
 // Order Management Statistics
 export const getOrderManagementStats = asyncHandler(async (req, res) => {
     console.log('🔍 getOrderManagementStats: Starting stats retrieval...');
     console.log('🔍 getOrderManagementStats: Request user:', req.user);
-
+    
     const managerId = req.user._id;
     console.log('🔍 getOrderManagementStats: Manager ID:', managerId);
-
+    
     // Get the manager's store ID
     const manager = await Manager.findById(managerId).select('store');
     console.log('🔍 getOrderManagementStats: Manager found:', manager);
-
+    
     if (!manager || !manager.store) {
         console.log('❌ getOrderManagementStats: Manager or store not found');
         throw new ApiError(404, "Manager's store not found");
     }
-
+    
     console.log('🔍 getOrderManagementStats: Store ID:', manager.store);
-
+    
     // Get comprehensive order statistics - filter by store instead of manager
     const totalOrders = await Order.countDocuments({ store: manager.store });
-    const deliveredOrders = await Order.countDocuments({
-        store: manager.store,
-        status: 'delivered'
+    const deliveredOrders = await Order.countDocuments({ 
+        store: manager.store, 
+        status: 'delivered' 
     });
-    const inTransitOrders = await Order.countDocuments({
-        store: manager.store,
-        status: 'in_transit'
+    const inTransitOrders = await Order.countDocuments({ 
+        store: manager.store, 
+        status: 'in_transit' 
     });
-    const pickedUpOrders = await Order.countDocuments({
-        store: manager.store,
-        status: 'picked_up'
+    const pickedUpOrders = await Order.countDocuments({ 
+        store: manager.store, 
+        status: 'picked_up' 
     });
-
+    
     console.log('🔍 getOrderManagementStats: Counts:', { totalOrders, deliveredOrders, inTransitOrders, pickedUpOrders });
-
+    
     // Calculate total revenue
     const revenueResult = await Order.aggregate([
         { $match: { store: manager.store } },
         { $group: { _id: null, totalRevenue: { $sum: '$amount' } } }
     ]);
-
+    
     const totalRevenue = revenueResult.length > 0 ? revenueResult[0].totalRevenue : 0;
     console.log('🔍 getOrderManagementStats: Total revenue:', totalRevenue);
-
+    
     const stats = {
         totalOrders,
         delivered: deliveredOrders,
@@ -566,9 +579,9 @@ export const getOrderManagementStats = asyncHandler(async (req, res) => {
         pickedUp: pickedUpOrders,
         totalRevenue
     };
-
+    
     console.log('✅ getOrderManagementStats: Successfully retrieved stats');
-
+    
     return res.status(200).json(
         new ApiResponse(200, { stats }, "Order management statistics retrieved successfully")
     );
