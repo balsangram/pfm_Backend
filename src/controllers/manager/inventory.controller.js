@@ -80,22 +80,43 @@ const updateProductQuantity = asyncHandler(async (req, res) => {
         throw new ApiError(400, "Invalid product ID");
     }
 
-    if (typeof quantity !== 'number' || quantity < 0) {
+    const parsedQty = Number(quantity);
+    if (!Number.isFinite(parsedQty) || parsedQty < 0) {
         throw new ApiError(400, "Quantity must be a non-negative number");
     }
 
-    const product = await SubCategory.findByIdAndUpdate(
-        id,
-        { quantity },
-        { new: true, runValidators: true }
-    ).select('name img quantity price discount discountPrice type weight pieces serves totalEnergy');
-
+    // Ensure product exists
+    const product = await SubCategory.findById(id).select('name img quantity price discount discountPrice type weight pieces serves totalEnergy');
     if (!product) {
         throw new ApiError(404, "Product not found");
     }
 
-    res.status(200).json(
-        new ApiResponse(200, product, "Product quantity updated successfully")
+    const managerId = req.user?._id;
+    if (!managerId) {
+        throw new ApiError(401, "Unauthorized");
+    }
+
+    const managerObjectId = new mongoose.Types.ObjectId(String(managerId));
+
+    // quantity should be an array of { managerId, count }. Sanitize existing data.
+    const existing = Array.isArray(product.quantity) ? product.quantity : [];
+    const sanitized = existing.filter((q) => q && q.managerId && typeof q.count === 'number');
+
+    const idx = sanitized.findIndex((q) => String(q.managerId) === String(managerObjectId));
+
+    if (idx >= 0) {
+        sanitized[idx].count = parsedQty;
+    } else {
+        sanitized.push({ managerId: managerObjectId, count: parsedQty });
+    }
+
+    product.quantity = sanitized;
+    await product.save();
+
+    const managerQuantity = (product.quantity.find(q => String(q.managerId) === String(managerObjectId))?.count) ?? 0;
+
+    return res.status(200).json(
+        new ApiResponse(200, { ...product.toObject(), managerQuantity }, "Product quantity updated successfully")
     );
 });
 
