@@ -5,6 +5,7 @@ import { customerCategoriesController } from "../controllers/customer/categories
 import { customerCartController } from "../controllers/customer/customerCart.controller.js";
 import { customerProfileController } from "../controllers/customer/customerProfile.controller.js";
 import { customerCouponsController } from "../controllers/customer/coupons.controller.js";
+import { createOrder } from "../controllers/customer/order.controller.js";
 
 const router = Router();
 
@@ -45,7 +46,7 @@ router.get("/cart-details/:userId", customerCartController.totalProductAmount); 
 
 //order related
 router.get("/order-history/:userId", customerCartController.orderHistory);
-router.post("/create-order/:userId", customerCartController.createOrder);
+router.post("/create-order/:userId", createOrder);
 router.post("/cancel-order/:userId/:orderId", customerCartController.cancelOrder);
 
 // wishlist

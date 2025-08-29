@@ -636,8 +636,6 @@ const orderHistory = asyncHandler(async (req, res) => {
 // });
 
 const createOrder = asyncHandler(async (req, res) => {
-    console.log("🚀 ~ req.params:", req.params);
-    console.log(req.body, "body");
 
     const { userId } = req.params;
     const { location, phone, latitude, longitude, notes, isUrgent, pincode, walletPoint, couponsId } = req.body;
@@ -707,7 +705,6 @@ const createOrder = asyncHandler(async (req, res) => {
         price: item.subCategory.price,
     }));
     let totalAmount = orderItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
-    console.log("🚀 ~ totalAmount:", totalAmount)
 
     // console.log(couponsId, "couponsId");
 
@@ -747,11 +744,6 @@ const createOrder = asyncHandler(async (req, res) => {
         }
     }
 
-
-    console.log("🚀 ~ totalAmount:", totalAmount)
-
-
-
     // 11️⃣ Create new order
     const newOrder = await Order.create({
         customer: customer._id,
@@ -785,38 +777,6 @@ const createOrder = asyncHandler(async (req, res) => {
         .status(201)
         .json(new ApiResponse(201, { order: newOrder, nearestStore }, "Order created successfully"));
 });
-
-// const cancelOrder = asyncHandler(async (req, res) => {
-//     const { userId, orderId } = req.params;
-//     const { notes } = req.body;
-//     // Validate IDs
-//     if (!mongoose.Types.ObjectId.isValid(userId) || !mongoose.Types.ObjectId.isValid(orderId)) {
-//         return res.status(400).json({ message: "Invalid userId or orderId" });
-//     }
-
-//     // Find the order for the user (customer field, not userId)
-//     const order = await Order.findOne({ _id: orderId, customer: userId });
-//     if (!order) {
-//         return res.status(404).json({ message: "Order not found" });
-//     }
-
-//     // Check if already cancelled or delivered
-//     if (order.status === "cancelled") {
-//         return res.status(400).json({ message: "Order already cancelled" });
-//     }
-//     if (order.status === "delivered") {
-//         return res.status(400).json({ message: "Delivered order cannot be cancelled" });
-//     }
-
-//     // Update status
-//     order.status = "cancelled";
-//     await order.save();
-
-//     res.status(200).json({
-//         message: "Order cancelled successfully",
-//         order
-//     });
-// });
 
 const cancelOrder = asyncHandler(async (req, res) => {
     const { userId, orderId } = req.params;
