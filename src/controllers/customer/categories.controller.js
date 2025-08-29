@@ -249,8 +249,6 @@ const allSubCategories_bottom_search = asyncHandler(async (req, res) => {
     }
 });
 
-
-
 export const customerCategoriesController = {
     allCategories,
     // allCategoriesWithCount,

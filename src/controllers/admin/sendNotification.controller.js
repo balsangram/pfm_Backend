@@ -144,50 +144,50 @@ export const sendCustomerNotification = async (req, res) => {
 };
 
 
-export const saveAndSubscribeToken = async (req, res) => {
-    const { token, customerId } = req.body;
+// export const saveAndSubscribeToken = async (req, res) => {
+//     const { token, customerId } = req.body;
 
-    // Validate input
-    if (!token || typeof token !== "string") {
-        return res.status(400).json({ message: "Valid device token is required" });
-    }
-    if (!customerId) {
-        return res.status(400).json({ message: "Customer ID is required" });
-    }
+//     // Validate input
+//     if (!token || typeof token !== "string") {
+//         return res.status(400).json({ message: "Valid device token is required" });
+//     }
+//     if (!customerId) {
+//         return res.status(400).json({ message: "Customer ID is required" });
+//     }
 
-    try {
-        // Subscribe token to 'all' topic
-        const response = await admin.messaging().subscribeToTopic(token, "all");
-        if (response.failureCount > 0) {
-            const errorInfo = response.errors?.[0]?.error || "Unknown error while subscribing";
-            return res.status(400).json({
-                message: "Failed to subscribe token to topic 'all'",
-                error: errorInfo,
-            });
-        }
+//     try {
+//         // Subscribe token to 'all' topic
+//         const response = await admin.messaging().subscribeToTopic(token, "all");
+//         if (response.failureCount > 0) {
+//             const errorInfo = response.errors?.[0]?.error || "Unknown error while subscribing";
+//             return res.status(400).json({
+//                 message: "Failed to subscribe token to topic 'all'",
+//                 error: errorInfo,
+//             });
+//         }
 
-        // Save token to customer's fcToken array (avoid duplicates)
-        const customer = await Customer.findById(customerId);
-        if (!customer) {
-            return res.status(404).json({ message: "Customer not found" });
-        }
+//         // Save token to customer's fcToken array (avoid duplicates)
+//         const customer = await Customer.findById(customerId);
+//         if (!customer) {
+//             return res.status(404).json({ message: "Customer not found" });
+//         }
 
-        if (!customer.fcToken.includes(token)) {
-            customer.fcToken.push(token);
-            await customer.save();
-        }
+//         if (!customer.fcToken.includes(token)) {
+//             customer.fcToken.push(token);
+//             await customer.save();
+//         }
 
-        return res.status(200).json({
-            message: "Token saved and subscribed to topic 'all' successfully",
-            firebaseResponse: response,
-            customerId,
-            totalTokens: customer.fcToken.length,
-        });
-    } catch (error) {
-        console.error("Error in saveAndSubscribeToken:", error.message);
-        return res.status(500).json({
-            message: "Failed to process token",
-            error: error.message,
-        });
-    }
-};
+//         return res.status(200).json({
+//             message: "Token saved and subscribed to topic 'all' successfully",
+//             firebaseResponse: response,
+//             customerId,
+//             totalTokens: customer.fcToken.length,
+//         });
+//     } catch (error) {
+//         console.error("Error in saveAndSubscribeToken:", error.message);
+//         return res.status(500).json({
+//             message: "Failed to process token",
+//             error: error.message,
+//         });
+//     }
+// };

@@ -16,6 +16,7 @@ import {
 import OTP from "../models/otp.model.js";
 import { ApiError } from "../utils/ApiError.js";
 import mongoose from "mongoose";
+import admin from "../../firebase.js";
 
 // Generate Access Token
 const generateAccessToken = (user, role) => {
@@ -857,9 +858,73 @@ export const storeRefreshToken = asyncHandler(async (req, res) => {
 });
 
 // notefication 
+// export const saveAndSubscribeToken = async (req, res) => {
+//     const { token, id } = req.body;
+//     console.log("🚀 ~ saveAndSubscribeToken ~ req.body:", req.body);
+
+//     // Validate input
+//     if (!token || typeof token !== "string") {
+//         return res.status(400).json({ message: "Valid device token is required." });
+//     }
+
+//     try {
+//         // Subscribe token to the 'all' topic first
+//         const response = await admin.messaging().subscribeToTopic(token, "all");
+//         if (!response || response.failureCount > 0) {
+//             const errorInfo =
+//                 response.errors?.[0]?.error ||
+//                 "Unknown error while subscribing to topic.";
+//             console.log("FCM Subscription Error:", errorInfo);
+
+//             return res.status(400).json({
+//                 message: "Failed to subscribe token to topic 'all'.",
+//                 error: errorInfo,
+//             });
+//         }
+
+//         console.log("Token subscribed to 'all' topic 📡:", response);
+
+//         // Save or update token
+//         const existing = await DeviceToken.findOne({ id });
+
+//         if (existing) {
+//             // Update existing token
+//             existing.token = token;
+//             await existing.save();
+//             console.log("Token updated for user:", id);
+//         } else {
+//             // Create new token entry
+//             await DeviceToken.create({ id, token });
+//             console.log("New token saved for user:", id);
+//         }
+
+//         res.status(200).json({
+//             message: "Token saved and subscribed to topic 'all' successfully.",
+//             firebaseResponse: response,
+//         });
+//     } catch (error) {
+//         console.log("Error in saveAndSubscribeToken:", error);
+
+//         if (error.code && error.message) {
+//             return res.status(500).json({
+//                 message: "Firebase error occurred while subscribing token.",
+//                 error: {
+//                     code: error.code,
+//                     message: error.message,
+//                 },
+//             });
+//         }
+
+//         res.status(500).json({
+//             message: "Internal server error occurred while processing token.",
+//             error: error.message || "Unexpected error",
+//         });
+//     }
+// };
+
 export const saveAndSubscribeToken = async (req, res) => {
-    const { token, id } = req.body;
-    console.log("🚀 ~ saveAndSubscribeToken ~ req.body:", req.body);
+    const { token } = req.body;
+    console.log("🚀 ~ subscribeToken ~ req.body:", req.body);
 
     // Validate input
     if (!token || typeof token !== "string") {
@@ -867,13 +932,13 @@ export const saveAndSubscribeToken = async (req, res) => {
     }
 
     try {
-        // Subscribe token to the 'all' topic first
+        // Subscribe token to "all" topic
         const response = await admin.messaging().subscribeToTopic(token, "all");
+
         if (!response || response.failureCount > 0) {
             const errorInfo =
-                response.errors?.[0]?.error ||
-                "Unknown error while subscribing to topic.";
-            console.log("FCM Subscription Error:", errorInfo);
+                response.errors?.[0]?.error || "Unknown error while subscribing.";
+            console.log("❌ FCM Subscription Error:", errorInfo);
 
             return res.status(400).json({
                 message: "Failed to subscribe token to topic 'all'.",
@@ -881,41 +946,17 @@ export const saveAndSubscribeToken = async (req, res) => {
             });
         }
 
-        console.log("Token subscribed to 'all' topic 📡:", response);
+        console.log("✅ Token subscribed to 'all' topic:", response);
 
-        // Save or update token
-        const existing = await DeviceToken.findOne({ id });
-
-        if (existing) {
-            // Update existing token
-            existing.token = token;
-            await existing.save();
-            console.log("Token updated for user:", id);
-        } else {
-            // Create new token entry
-            await DeviceToken.create({ id, token });
-            console.log("New token saved for user:", id);
-        }
-
-        res.status(200).json({
-            message: "Token saved and subscribed to topic 'all' successfully.",
+        return res.status(200).json({
+            message: "Token subscribed to topic 'all' successfully.",
             firebaseResponse: response,
         });
     } catch (error) {
-        console.log("Error in saveAndSubscribeToken:", error);
+        console.error("🔥 Error in subscribeToken:", error);
 
-        if (error.code && error.message) {
-            return res.status(500).json({
-                message: "Firebase error occurred while subscribing token.",
-                error: {
-                    code: error.code,
-                    message: error.message,
-                },
-            });
-        }
-
-        res.status(500).json({
-            message: "Internal server error occurred while processing token.",
+        return res.status(500).json({
+            message: "Internal server error occurred while subscribing token.",
             error: error.message || "Unexpected error",
         });
     }

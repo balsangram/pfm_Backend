@@ -46,7 +46,7 @@ app.get('/api/example', (req, res) => {
 });
 
 // notefication 
-app.use("/deviceToken", saveAndSubscribeToken);
+app.post("/deviceToken", saveAndSubscribeToken);
 
 
 // Routes
