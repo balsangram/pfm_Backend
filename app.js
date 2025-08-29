@@ -38,7 +38,7 @@ app.use(cookieParser())
 
 // Example route
 app.get('/', (req, res) => {
-    res.send('Server is running! 28-08-2025');
+    res.send('Server is running! 29-08-2025');
 });
 
 app.get('/api/example', (req, res) => {
