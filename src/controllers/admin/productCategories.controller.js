@@ -131,8 +131,6 @@ const updateProductCategory = asyncHandler(async (req, res) => {
     );
 });
 
-
-
 const deleteProductCategory = asyncHandler(async (req, res) => {
     const { id } = req.params;
 
