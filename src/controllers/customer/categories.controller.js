@@ -188,6 +188,23 @@ const fullDetailsOfSubCategorieCard = asyncHandler(async (req, res) => {
 
 
 // Controller
+// const searchItem = asyncHandler(async (req, res) => {
+//     const { name } = req.query; // ?name=...
+
+//     if (!name) {
+//         throw new ApiError(400, "Item name is required");
+//     }
+
+//     // const items = await SubCategory.find({ name: { $regex: name, $options: "i" } });
+//     // Only fetch name and img fields
+//     const items = await SubCategory.find(
+//         { name: { $regex: name, $options: "i" } },
+//         { name: 1, img: 1, _id: 0 } // projection: include name & img, exclude _id
+//     );
+
+//     return res.status(200).json(new ApiResponse(200, items, "Items fetched successfully"));
+// });
+
 const searchItem = asyncHandler(async (req, res) => {
     const { name } = req.query; // ?name=...
 
@@ -195,14 +212,23 @@ const searchItem = asyncHandler(async (req, res) => {
         throw new ApiError(400, "Item name is required");
     }
 
-    // const items = await SubCategory.find({ name: { $regex: name, $options: "i" } });
-    // Only fetch name and img fields
+    // ✅ Fetch only the required fields
     const items = await SubCategory.find(
         { name: { $regex: name, $options: "i" } },
-        { name: 1, img: 1, _id: 0 } // projection: include name & img, exclude _id
+        {
+            name: 1,
+            img: 1,
+            weight: 1,
+            price: 1,
+            discount: 1,
+            discountPrice: 1,
+            _id: 0 // hide _id if you don’t need it
+        }
     );
 
-    return res.status(200).json(new ApiResponse(200, items, "Items fetched successfully"));
+    return res.status(200).json(
+        new ApiResponse(200, items, "Items fetched successfully")
+    );
 });
 
 
