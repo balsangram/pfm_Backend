@@ -51,6 +51,7 @@ router.post("/cancel-order/:userId/:orderId", customerCartController.cancelOrder
 // wishlist
 // 1. display all categories cards ===
 router.get("/allCategories", customerCategoriesController.allCategories);
+// router.get("/allCategories", customerCategoriesController.allCategoriesWithCount);
 
 // 2. display all bestSelling products ===
 router.get("/bestSellingProducts", customerCategoriesController.bestSellingProducts);

@@ -6,13 +6,33 @@ import SubCategory from "../../models/catalog/subCategorySchema.model.js";
 import mongoose from "mongoose";
 import Customers from "../../models/customer/customer.model.js"
 
+// const allCategories = asyncHandler(async (req, res) => {
+//     // Fetch only name and img
+//     const categories = await Categories.find().select("name img");
+//     res.status(200).json(
+//         new ApiResponse(200, categories, "Product categories retrieved successfully")
+//     );
+// });
+
 const allCategories = asyncHandler(async (req, res) => {
-    // Fetch only name and img
-    const categories = await Categories.find().select("name img");
+    // ✅ Get the number from query params
+    const { limit } = req.query;
+
+    // ✅ Fetch only name and img
+    let query = Categories.find().select("name img");
+
+    // ✅ If limit is provided, apply it
+    if (limit) {
+        query = query.limit(Number(limit));
+    }
+
+    const categories = await query;
+
     res.status(200).json(
         new ApiResponse(200, categories, "Product categories retrieved successfully")
     );
 });
+
 
 const bestSellingProducts = asyncHandler(async (req, res) => {
     // Fetch all subcategories where bestSellers is true
@@ -207,6 +227,7 @@ const allSubCategories_bottom_search = asyncHandler(async (req, res) => {
 
 export const customerCategoriesController = {
     allCategories,
+    // allCategoriesWithCount,
 
     bestSellingProducts,
     bestSellingProductsById,
