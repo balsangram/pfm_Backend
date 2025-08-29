@@ -173,7 +173,7 @@ export const adminRefreshToken = asyncHandler(async (req, res) => {
         httpOnly: true,        // prevents JS access
         secure: process.env.NODE_ENV === "production", // use HTTPS in prod
         sameSite: "strict",    // CSRF protection
-        maxAge: 15 * 60 * 1000 // 15 minutes
+        maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
     });
 
     res.cookie("adminRefreshToken", newRefreshToken, {
@@ -740,7 +740,7 @@ export const storeVerifyLogin = asyncHandler(async (req, res) => {
     // OTP is valid, proceed with login
     // Find store by the phone number
     const store = await Store.findOne({ phone });
-    
+
     console.log("🚀 ~ store:", store)
     if (!store) {
         return res

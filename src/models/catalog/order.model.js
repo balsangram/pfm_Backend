@@ -137,6 +137,12 @@ const orderSchema = new mongoose.Schema({
         type: Number,
         required: false
     }
+    ,
+    reason: {
+        type: String,
+        enum: ["nearest place", "product not available"], // ✅ allowed values
+        default: "nearest place" // ✅ default value
+    },
 }, {
     timestamps: true
 });
