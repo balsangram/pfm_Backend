@@ -115,6 +115,10 @@ const customerSchema = new mongoose.Schema({
         type: [String],
         // required: true 
     },
+    notifications: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Notification" // Must match the Notification model
+    }],
 }, {
     timestamps: true
 });

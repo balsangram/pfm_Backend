@@ -6,6 +6,7 @@ import { customerCartController } from "../controllers/customer/customerCart.con
 import { customerProfileController } from "../controllers/customer/customerProfile.controller.js";
 import { customerCouponsController } from "../controllers/customer/coupons.controller.js";
 import { createOrder } from "../controllers/customer/order.controller.js";
+import { noteficationControl } from "../controllers/customer/notefication.controller.js";
 
 const router = Router();
 
@@ -72,5 +73,8 @@ router.get("/full-details-of-sub-categorie-card/:id", customerCategoriesControll
 
 router.get("/search-item", customerCategoriesController.searchItem);
 router.get("/allCategories-search-bottom", customerCategoriesController.allSubCategories_bottom_search);
+
+// notefication 
+router.get("/get-notefication/:userId", noteficationControl.displayUserNoteficatio);
 
 export default router;

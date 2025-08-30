@@ -11,11 +11,12 @@ const notificationSchema = new mongoose.Schema({
     },
     link: {
         type: String
-        // required: true
     },
     img: {
         type: String
     }
-})
+}, {
+    timestamps: true // ✅ This will auto-create createdAt & updatedAt
+});
 
-export default mongoose.model("notification", notificationSchema);
+export default mongoose.model("Notification", notificationSchema);
