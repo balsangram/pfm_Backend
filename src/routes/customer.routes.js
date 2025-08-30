@@ -7,6 +7,7 @@ import { customerProfileController } from "../controllers/customer/customerProfi
 import { customerCouponsController } from "../controllers/customer/coupons.controller.js";
 import { createOrder } from "../controllers/customer/order.controller.js";
 import { noteficationControl } from "../controllers/customer/notefication.controller.js";
+import subCategorySchemaModel from "../models/catalog/subCategorySchema.model.js";
 
 const router = Router();
 
@@ -71,10 +72,14 @@ router.get("/type-categories-all-card/:id", customerCategoriesController.typeCat
 // 6. display full details of sub categorie card 
 router.get("/full-details-of-sub-categorie-card/:id", customerCategoriesController.fullDetailsOfSubCategorieCard)
 
+// display all subCategory
+router.get("/display-all-subcategory", customerCategoriesController.displayAllSubCategory)
+
 router.get("/search-item", customerCategoriesController.searchItem);
 router.get("/allCategories-search-bottom", customerCategoriesController.allSubCategories_bottom_search);
 
 // notefication 
 router.get("/get-notefication/:userId", noteficationControl.displayUserNoteficatio);
+
 
 export default router;

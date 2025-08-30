@@ -249,6 +249,24 @@ const allSubCategories_bottom_search = asyncHandler(async (req, res) => {
     }
 });
 
+export const displayAllSubCategory = asyncHandler(async (req, res) => {
+    try {
+        // Fetch all subcategories
+        const subCategories = await SubCategory.find()
+            .populate("quantity.managerId", "firstName lastName img phone") // populate manager details
+            .sort({ createdAt: -1 }); // latest first
+
+        if (!subCategories || subCategories.length === 0) {
+            throw new ApiError(404, "No subcategories found");
+        }
+
+        return res
+            .status(200)
+            .json(new ApiResponse(200, subCategories, "Subcategories fetched successfully"));
+    } catch (error) {
+        throw new ApiError(500, error.message || "Failed to fetch subcategories");
+    }
+});
 export const customerCategoriesController = {
     allCategories,
     // allCategoriesWithCount,
@@ -261,5 +279,6 @@ export const customerCategoriesController = {
     typeCategoriesAllCard,
     fullDetailsOfSubCategorieCard,
     searchItem,
-    allSubCategories_bottom_search
+    allSubCategories_bottom_search,
+    displayAllSubCategory
 };
