@@ -858,8 +858,69 @@ const totalProductAmount = asyncHandler(async (req, res) => {
     );
 });
 
-const orderStatusDisplay = asyncHandler(async ( req, res) =>{
-    
+const orderStatusDisplay = asyncHandler(async (req, res) => {
+    const { orderId } = req.params;
+
+    if (!orderId || !mongoose.Types.ObjectId.isValid(orderId)) {
+        throw new ApiError(400, "Invalid order ID");
+    }
+
+    // Ensure the order belongs to the authenticated customer
+    const customerId = req.user?._id;
+
+    const query = { _id: orderId };
+    if (customerId) {
+        query.customer = customerId;
+    }
+
+    const order = await Order.findOne(query).select("_id status deliveryStatus");
+    if (!order) {
+        throw new ApiError(404, "Order not found");
+    }
+
+    // Progressive stages for delivery lifecycle
+    const stages = ["pending", "accepted", "picked_up", "in_transit", "delivered"];
+
+    const isCancelled = order.status === "cancelled";
+    const isRejected = order.deliveryStatus === "rejected";
+
+    const currentStageName = stages.includes(order.deliveryStatus)
+        ? order.deliveryStatus
+        : "pending";
+    const currentIndex = stages.indexOf(currentStageName);
+
+    const stageBooleans = stages.reduce((acc, stage, index) => {
+        if (isRejected) {
+            // If rejected: all stages are false
+            acc[stage] = false;
+        } else if (isCancelled) {
+            // If cancelled: show progression up to current + 1 more stage (but not beyond delivered)
+            acc[stage] = index <= Math.min(currentIndex + 1, stages.length - 1);
+        } else {
+            // Normal flow: show progression up to current stage
+            acc[stage] = index <= currentIndex;
+        }
+        return acc;
+    }, {});
+
+    // Explicit terminal flags
+    stageBooleans.cancelled = isCancelled;
+    stageBooleans.rejected = isRejected;
+
+    return res
+        .status(200)
+        .json(
+            new ApiResponse(
+                200,
+                {
+                    orderId: order._id,
+                    status: order.status,
+                    deliveryStatus: order.deliveryStatus,
+                    stages: stageBooleans,
+                },
+                "Order status fetched successfully"
+            )
+        );
 })
 
 export const customerCartController = {
