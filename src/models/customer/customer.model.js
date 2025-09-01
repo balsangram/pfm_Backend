@@ -255,6 +255,7 @@ const customerSchema = new mongoose.Schema({
     fcToken: {
         type: [String],
         // required: true 
+        default: [],
     }
 }, {
     timestamps: true

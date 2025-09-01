@@ -26,8 +26,8 @@ const SubCategorySchema = new mongoose.Schema(
             type: String,
             required: [true, "Subcategory name is required"],
             trim: true,
-            minlength: [2, "Name must be at least 2 characters long"],
-            maxlength: [100, "Name cannot exceed 100 characters"],
+            // minlength: [2, "Name must be at least 2 characters long"],
+            // maxlength: [100, "Name cannot exceed 100 characters"],
             index: true,
         },
         type: {
@@ -45,21 +45,28 @@ const SubCategorySchema = new mongoose.Schema(
             type: String,
             required: [true, "Description is required"],
             trim: true,
-            minlength: [5, "Description must be at least 5 characters long"],
+            // minlength: [5, "Description must be at least 5 characters long"],
         },
+        unit: {
+            type: String,
+            required: true
+        }
+        ,
         weight: {
             type: String,
-            required: [true, "Weight is required"],
+            // required: [true, "Weight is required"],
             trim: true,
+            default: "0"
         },
         pieces: {
             type: String,
-            required: [true, "Pieces is required"],
+            // required: [true, "Pieces is required"],
+            default: "0"
         },
         serves: {
             type: Number,
             required: [true, "Serves is required"],
-            min: [1, "Serves must be at least 1"],
+            // min: [1, "Serves must be at least 1"],
         },
         totalEnergy: {
             type: Number,

@@ -198,13 +198,18 @@ export const adminRefreshToken = asyncHandler(async (req, res) => {
 
 // Customer Send OTP
 export const customerSendOtp = asyncHandler(async (req, res) => {
-    const { phone, refId } = req.body;
+    const { phone, refId, fcToken } = req.body;
 
     // Validate phone number
     if (!phone || phone.length < 10) {
         return res.status(400).json(new ApiResponse(400, null, "Valid phone number is required"));
     }
 
+    await Customer.findByIdAndUpdate(
+        refId,
+        { $addToSet: { fcToken: fcToken } }, // prevents duplicate tokens
+        { new: true }
+    );
     // Validate refId first (if provided)
     if (refId) {
         // Validate refId format (should be a valid MongoDB ObjectId)
@@ -981,6 +986,7 @@ export const saveAndSubscribeToken = async (req, res) => {
                 error: response.errors[0].error,
             });
         }
+
 
         return res.status(200).json({
             message: "Token subscribed to 'all' topic successfully",
