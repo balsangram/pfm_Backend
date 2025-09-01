@@ -76,28 +76,7 @@ export const changeManagerPassword = asyncHandler(async (req, res) => {
 
 // Order Management
 export const getOrders = asyncHandler(async (req, res) => {
-    console.log('🔍 getOrders: Starting order retrieval...');
-    console.log('🔍 getOrders: Request user:', req.user);
-    console.log('🔍 getOrders: Request query:', req.query);
-
-    console.log('🔍 getOrders: Starting order retrieval...');
-    console.log('🔍 getOrders: Request user:', req.user);
-    console.log('🔍 getOrders: Request query:', req.query);
-    
     const managerId = req.user._id;
-    console.log('🔍 getOrders: Manager ID:', managerId);
-
-    // Get the manager's store ID
-    const manager = await Manager.findById(managerId).select('store');
-    console.log('🔍 getOrders: Manager found:', manager);
-
-    if (!manager || !manager.store) {
-        console.log('❌ getOrders: Manager or store not found');
-        throw new ApiError(404, "Manager's store not found");
-    }
-
-    console.log('🔍 getOrders: Store ID:', manager.store);
-
     const {
         status,
         dateFrom,
@@ -106,12 +85,10 @@ export const getOrders = asyncHandler(async (req, res) => {
         page = 1,
         limit = 10
     } = req.query;
-
-    console.log('🔍 getOrders: Query parameters:', { status, dateFrom, dateTo, search, page, limit });
-
-    // Build filter object - filter by store instead of manager to get all orders for the store
-    const filter = { store: manager.store };
-
+    
+    // Build filter object
+    const filter = { manager: managerId };
+    
     if (status) {
         filter.status = status;
     }
@@ -133,29 +110,21 @@ export const getOrders = asyncHandler(async (req, res) => {
             filter.$or.push({ _id: search });
         }
     }
-
-    console.log('🔍 getOrders: Final filter:', JSON.stringify(filter, null, 2));
-
+    
     // Calculate pagination
     const skip = (parseInt(page) - 1) * parseInt(limit);
 
     const orders = await Order.find(filter)
         .populate('deliveryPartner', 'name phone')
-        .populate('manager', 'firstName lastName phone')
-        .populate('manager', 'firstName lastName phone')
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(parseInt(limit))
         .select('-__v');
-
-    console.log('🔍 getOrders: Orders found:', orders.length);
-
+    
     const totalOrders = await Order.countDocuments(filter);
 
     const totalPages = Math.ceil(totalOrders / parseInt(limit));
-
-    console.log('✅ getOrders: Successfully retrieved orders');
-
+    
     return res.status(200).json(
         new ApiResponse(200, {
             orders,
@@ -173,18 +142,10 @@ export const getOrders = asyncHandler(async (req, res) => {
 export const getOrderById = asyncHandler(async (req, res) => {
     const { id } = req.params;
     const managerId = req.user._id;
-
-    // Get the manager's store ID
-    const manager = await Manager.findById(managerId).select('store');
-    if (!manager || !manager.store) {
-        throw new ApiError(404, "Manager's store not found");
-    }
-
-    const order = await Order.findOne({ _id: id, store: manager.store })
+    
+    const order = await Order.findOne({ _id: id, manager: managerId })
         .populate('deliveryPartner', 'name phone')
         .populate('store', 'name location phone')
-        .populate('manager', 'firstName lastName phone')
-        .populate('manager', 'firstName lastName phone')
         .select('-__v');
 
     if (!order) {
@@ -200,14 +161,8 @@ export const updateOrderStatus = asyncHandler(async (req, res) => {
     const { id } = req.params;
     const managerId = req.user._id;
     const { status, pickedUpBy, notes } = req.body;
-
-    // Get the manager's store ID
-    const manager = await Manager.findById(managerId).select('store');
-    if (!manager || !manager.store) {
-        throw new ApiError(404, "Manager's store not found");
-    }
-
-    const order = await Order.findOne({ _id: id, store: manager.store });
+    
+    const order = await Order.findOne({ _id: id, manager: managerId });
     if (!order) {
         throw new ApiError(404, "Order not found");
     }
@@ -286,136 +241,144 @@ export const migrateDeliveryPartners = asyncHandler(async (req, res) => {
     );
 });
 
-// Delivery Partner Management
-// export const getDeliveryPartners = asyncHandler(async (req, res) => {
-//     console.log("hhhhh");
-
-//     const managerId = req.user._id;
-//     // console.log("🚀 ~ req.user._id:", req.user._id)
-//     const { status, search, page = 1, limit = 10 } = req.query;
-
-//     // Get the manager's store ID first
-//     const manager = await Manager.findById(managerId).select('store');
-//     console.log("🚀 ~ manager:", manager)
-//     if (!manager || !manager.store) {
-//         throw new ApiError(404, "Manager's store not found");
-//     }
-
-//     // Use aggregation to find delivery partners for this store
-//     // This handles both direct store association and delivery partners with orders from this store
-//     const pipeline = [
-//         {
-//             $match: {
-//                 isActive: true,
-//                 $or: [
-//                     { store: manager.store }, // Direct store association
-//                     {
-//                         // Delivery partners with orders from this store
-//                         _id: {
-//                             $in: await Order.distinct('deliveryPartner', {
-//                                 store: manager.store,
-//                                 deliveryPartner: { $exists: true, $ne: null }
-//                             })
-//                         }
-//                     }
-//                 ]
-//             }
-//         }
-//     ];
-//     console.log("🚀 ~ pipeline:", pipeline)
-
-//     // Add status filter if specified
-//     if (status) {
-//         pipeline[0].$match.status = status;
-//     }
-//     console.log("🚀 ~ status:", status)
-
-//     // Add search filter if specified
-//     if (search) {
-//         pipeline[0].$match.$and = [{
-//             $or: [
-//                 { name: { $regex: search, $options: 'i' } },
-//                 { phone: { $regex: search, $options: 'i' } }
-//             ]
-//         }];
-//     }
-
-//     // Add sorting and pagination
-//     pipeline.push(
-//         { $sort: { createdAt: -1 } },
-//         { $skip: (parseInt(page) - 1) * parseInt(limit) },
-//         { $limit: parseInt(limit) },
-//         { $project: { __v: 0 } }
-//     );
-
-//     // Get total count for pagination
-//     const countPipeline = [
-//         ...pipeline.slice(0, -3), // Remove sorting, skip, limit, and project
-//         { $count: "total" }
-//     ];
-//     console.log("🚀 ~ countPipeline:", countPipeline)
-
-//     const [deliveryPartners, countResult] = await Promise.all([
-//         DeliveryPartner.aggregate(pipeline),
-//         DeliveryPartner.aggregate(countPipeline)
-//     ]);
-
-//     const totalPartners = countResult[0]?.total || 0;
-//     console.log("🚀 ~ totalPartners:", totalPartners)
-//     const totalPages = Math.ceil(totalPartners / parseInt(limit));
-//     console.log("🚀 ~ totalPages:", totalPages)
-
-//     return res.status(200).json(
-//         new ApiResponse(200, {
-//             deliveryPartners,
-//             pagination: {
-//                 currentPage: parseInt(page),
-//                 totalPages,
-//                 totalPartners,
-//                 hasNextPage: parseInt(page) < totalPages,
-//                 hasPrevPage: parseInt(page) > 1
-//             }
-//         }, "Delivery partners retrieved successfully")
-//     );
-// });
-
+// Get delivery partners for the manager's store
 export const getDeliveryPartners = asyncHandler(async (req, res) => {
     const managerId = req.user._id;
-
-    // ✅ Get manager with storeId
-    const manager = await Manager.findById(managerId).select("store");
-    // console.log("🚀 ~ manager:", manager)
+    const { status, search, page = 1, limit = 10 } = req.query;
+    
+    // Get the manager's store ID
+    const manager = await Manager.findById(managerId).select('store');
     if (!manager || !manager.store) {
         throw new ApiError(404, "Manager's store not found");
     }
-
-    const storeId = manager.store;
-    // console.log("🚀 ~ storeId:", storeId)
-
-    // ✅ Find delivery partners linked to this store
-    const deliveryPartners = await DeliveryPartner.find({ store: storeId });
-    // console.log("🚀 ~ deliveryPartners:", deliveryPartners)
-
+    
+    // Build filter object
+    const filter = { 
+        isActive: true,
+        store: manager.store
+    };
+    
+    if (status) {
+        filter.status = status;
+    }
+    
+    if (search) {
+        filter.$or = [
+            { name: { $regex: search, $options: 'i' } },
+            { phone: { $regex: search, $options: 'i' } }
+        ];
+    }
+    
+    // Calculate pagination
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+    
+    const deliveryPartners = await DeliveryPartner.find(filter)
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(parseInt(limit))
+        .select('-__v');
+    
+    const totalPartners = await DeliveryPartner.countDocuments(filter);
+    const totalPages = Math.ceil(totalPartners / parseInt(limit));
+    
     return res.status(200).json(
-        new ApiResponse(
-            200,
-            {
-                // 👈 count
-                deliveryPartners // 👈 full details
-            },
-            "Delivery partners retrieved successfully"
-        )
+        new ApiResponse(200, {
+            deliveryPartners,
+            pagination: {
+                currentPage: parseInt(page),
+                totalPages,
+                totalPartners,
+                hasNextPage: parseInt(page) < totalPages,
+                hasPrevPage: parseInt(page) > 1
+            }
+        }, "Delivery partners retrieved successfully")
     );
 });
 
-
 export const getDeliveryPartnerById = asyncHandler(async (req, res) => {
     const { id } = req.params;
+    const managerId = req.user._id;
+    
+    // Get the manager's store ID
+    const manager = await Manager.findById(managerId).select('store');
+    if (!manager || !manager.store) {
+        throw new ApiError(404, "Manager's store not found");
+    }
+    
+    const deliveryPartner = await DeliveryPartner.findOne({
+        _id: id,
+        store: manager.store
+    }).select('-__v');
+    
+    if (!deliveryPartner) {
+        throw new ApiError(404, "Delivery partner not found");
+    }
+    
+    return res.status(200).json(
+        new ApiResponse(200, deliveryPartner, "Delivery partner retrieved successfully")
+    );
+});
 
-    const deliveryPartner = await DeliveryPartner.findById(id)
-        .select('-__v')
-        .populate('assignedOrders', 'orderId status totalAmount customerAddress deliveryAddress createdAt');
+export const createDeliveryPartner = asyncHandler(async (req, res) => {
+    const { name, phoneNumber, status } = req.body;
+    
+    // Check if delivery partner already exists with the same phone
+    const existingPartner = await DeliveryPartner.findOne({ phone: phoneNumber });
+    if (existingPartner) {
+        throw new ApiError(409, "Delivery partner with this phone number already exists");
+    }
+    
+    const deliveryPartner = await DeliveryPartner.create({
+        name,
+        phone: phoneNumber,
+        status: status || 'pending'
+    });
+    
+    return res.status(201).json(
+        new ApiResponse(201, deliveryPartner, "Delivery partner created successfully")
+    );
+});
 
+export const updateDeliveryPartner = asyncHandler(async (req, res) => {
+    const { id } = req.params;
+    const updateData = req.body;
+    
+    // If phone number is being updated, check for duplicates
+    if (updateData.phone) {
+        const existingPartner = await DeliveryPartner.findOne({ 
+            phone: updateData.phone, 
+            _id: { $ne: id } 
+        });
+        if (existingPartner) {
+            throw new ApiError(409, "Delivery partner with this phone number already exists");
+        }
+    }
+    
+    const deliveryPartner = await DeliveryPartner.findByIdAndUpdate(
+        id,
+        { $set: updateData },
+        { new: true, runValidators: true }
+    ).select('-__v');
+    
+    if (!deliveryPartner) {
+        throw new ApiError(404, "Delivery partner not found");
+    }
+    
+    return res.status(200).json(
+        new ApiResponse(200, deliveryPartner, "Delivery partner updated successfully")
+    );
+});
+
+export const deleteDeliveryPartner = asyncHandler(async (req, res) => {
+    const { id } = req.params;
+    
+    // Soft delete - set isActive to false
+    const deliveryPartner = await DeliveryPartner.findByIdAndUpdate(
+        id,
+        { isActive: false },
+        { new: true }
+    );
+    
     if (!deliveryPartner) {
         throw new ApiError(404, "Delivery partner not found");
     }
@@ -522,25 +485,15 @@ export const getDashboardStats = asyncHandler(async (req, res) => {
     );
 });
 
-
 // Order Management Statistics
 export const getOrderManagementStats = asyncHandler(async (req, res) => {
-    console.log('🔍 getOrderManagementStats: Starting stats retrieval...');
-    console.log('🔍 getOrderManagementStats: Request user:', req.user);
-    
     const managerId = req.user._id;
-    console.log('🔍 getOrderManagementStats: Manager ID:', managerId);
     
     // Get the manager's store ID
     const manager = await Manager.findById(managerId).select('store');
-    console.log('🔍 getOrderManagementStats: Manager found:', manager);
-    
     if (!manager || !manager.store) {
-        console.log('❌ getOrderManagementStats: Manager or store not found');
         throw new ApiError(404, "Manager's store not found");
     }
-    
-    console.log('🔍 getOrderManagementStats: Store ID:', manager.store);
     
     // Get comprehensive order statistics - filter by store instead of manager
     const totalOrders = await Order.countDocuments({ store: manager.store });
@@ -557,8 +510,6 @@ export const getOrderManagementStats = asyncHandler(async (req, res) => {
         status: 'picked_up' 
     });
     
-    console.log('🔍 getOrderManagementStats: Counts:', { totalOrders, deliveredOrders, inTransitOrders, pickedUpOrders });
-    
     // Calculate total revenue
     const revenueResult = await Order.aggregate([
         { $match: { store: manager.store } },
@@ -566,7 +517,6 @@ export const getOrderManagementStats = asyncHandler(async (req, res) => {
     ]);
     
     const totalRevenue = revenueResult.length > 0 ? revenueResult[0].totalRevenue : 0;
-    console.log('🔍 getOrderManagementStats: Total revenue:', totalRevenue);
     
     const stats = {
         totalOrders,
@@ -575,8 +525,6 @@ export const getOrderManagementStats = asyncHandler(async (req, res) => {
         pickedUp: pickedUpOrders,
         totalRevenue
     };
-    
-    console.log('✅ getOrderManagementStats: Successfully retrieved stats');
     
     return res.status(200).json(
         new ApiResponse(200, { stats }, "Order management statistics retrieved successfully")
