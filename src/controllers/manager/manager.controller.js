@@ -233,20 +233,16 @@ export const updateOrderStatus = asyncHandler(async (req, res) => {
     );
 });
 
-
-// Migration function to update existing delivery partners with store field
-
-
 // Migration function to update existing delivery partners with store field
 export const migrateDeliveryPartners = asyncHandler(async (req, res) => {
     const managerId = req.user._id;
-
+    
     // Get the manager's store ID
     const manager = await Manager.findById(managerId).select('store');
     if (!manager || !manager.store) {
         throw new ApiError(404, "Manager's store not found");
     }
-
+    
     // Find delivery partners that don't have a store field but have orders from this store
     const deliveryPartnersToUpdate = await Order.aggregate([
         {
@@ -262,17 +258,17 @@ export const migrateDeliveryPartners = asyncHandler(async (req, res) => {
             }
         }
     ]);
-
+    
     if (deliveryPartnersToUpdate.length === 0) {
         return res.status(200).json(
             new ApiResponse(200, { updated: 0 }, "No delivery partners need migration")
         );
     }
-
+    
     // Update delivery partners with store field
     const deliveryPartnerIds = deliveryPartnersToUpdate.map(dp => dp._id);
     const updateResult = await DeliveryPartner.updateMany(
-        {
+        { 
             _id: { $in: deliveryPartnerIds },
             $or: [
                 { store: { $exists: false } },
@@ -281,9 +277,9 @@ export const migrateDeliveryPartners = asyncHandler(async (req, res) => {
         },
         { $set: { store: manager.store } }
     );
-
+    
     return res.status(200).json(
-        new ApiResponse(200, {
+        new ApiResponse(200, { 
             updated: updateResult.modifiedCount,
             total: deliveryPartnersToUpdate.length
         }, `Migration completed. ${updateResult.modifiedCount} delivery partners updated.`)

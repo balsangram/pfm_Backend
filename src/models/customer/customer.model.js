@@ -180,7 +180,7 @@ const addressSchema = new mongoose.Schema({
     },
     isSelected: {
         type: Boolean,
-        default: true
+        default: false
     }
 }, {
     // _id: false // prevents creating _id for each address
