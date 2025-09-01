@@ -858,6 +858,10 @@ const totalProductAmount = asyncHandler(async (req, res) => {
     );
 });
 
+const orderStatusDisplay = asyncHandler(async ( req, res) =>{
+    
+})
+
 export const customerCartController = {
     displayCartDetails,
     addToCart,
@@ -868,5 +872,7 @@ export const customerCartController = {
     createOrder,
     cancelOrder,
 
-    totalProductAmount
+    totalProductAmount,
+
+    orderStatusDisplay,
 }

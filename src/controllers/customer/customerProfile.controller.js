@@ -231,64 +231,160 @@ const addAddress = asyncHandler(async (req, res) => {
     );
 });
 
+// const editAddress = asyncHandler(async (req, res) => {
+//     const { userId, addressId } = req.params;
+//     // const objectId1 = new mongoose.Types.ObjectId(userId);
+//     // const objectId2 = new mongoose.Types.ObjectId(addressId);
+//     // userId = objectId1;
+//     // addressId = objectId2;
+//     const { houseNo, street, city, state, pincode, type, latitude, longitude, isSelected } = req.body;
+
+//     // Validate userId and addressId
+//     if (!userId || !mongoose.Types.ObjectId.isValid(userId)) {
+//         throw new ApiError(400, "Invalid user ID");
+//     }
+//     if (!addressId) {
+//         throw new ApiError(400, "Address ID is required");
+//     }
+
+//     // Validate at least one field is provided
+//     if (!houseNo && !street && !city && !state && !pincode && !type && latitude === undefined && longitude === undefined) {
+//         throw new ApiError(400, "At least one field must be provided for update");
+//     }
+
+//     // Find customer
+//     const customer = await Customer.findById(userId);
+//     if (!customer) throw new ApiError(404, "Customer not found");
+//     console.log(addressId, "addressId");
+
+//     // Find address
+//     const address = customer.address.id(addressId);
+//     console.log("🚀 ~ address:", address)
+//     if (!address) throw new ApiError(404, "Address not found");
+
+//     // Update fields if provided
+//     if (houseNo) address.houseNo = houseNo.trim();
+//     if (street) address.street = street.trim();
+//     if (city) address.city = city.trim();
+//     if (state) address.state = state.trim();
+//     if (pincode) address.pincode = pincode.trim();
+//     if (type) {
+//         if (!['Home', 'Office', 'Other'].includes(type)) {
+//             throw new ApiError(400, "Invalid address type. Must be 'Home', 'Office', or 'Other'");
+//         }
+//         address.type = type;
+//     }
+
+//     // Auto-generate latitude & longitude if not manually provided
+//     if (latitude === undefined || longitude === undefined) {
+//         const fullAddress = `${address.houseNo}, ${address.street}, ${address.city}, ${address.state}, ${address.pincode}`;
+//         try {
+//             const response = await axios.get("https://nominatim.openstreetmap.org/search", {
+//                 params: { q: address.pincode, format: "json", limit: 1 },
+//                 headers: { 'User-Agent': 'PFM-App/1.0' } // required by Nominatim
+//             });
+
+//             if (response.data && response.data.length > 0) {
+//                 address.latitude = parseFloat(response.data[0].lat);
+//                 address.longitude = parseFloat(response.data[0].lon);
+//             } else {
+//                 // fallback to null if not found
+//                 address.latitude = null;
+//                 address.longitude = null;
+//             }
+//         } catch (err) {
+//             console.warn("Geocoding failed:", err.message);
+//             address.latitude = null;
+//             address.longitude = null;
+//         }
+//     } else {
+//         // If lat/lon provided manually
+//         address.latitude = latitude;
+//         address.longitude = longitude;
+//     }
+
+//     // Save customer
+//     await customer.save();
+
+//     return res.status(200).json(
+//         new ApiResponse(200, address, "Address updated successfully with updated location")
+//     );
+// });
+
 const editAddress = asyncHandler(async (req, res) => {
     const { userId, addressId } = req.params;
-    // const objectId1 = new mongoose.Types.ObjectId(userId);
-    // const objectId2 = new mongoose.Types.ObjectId(addressId);
-    // userId = objectId1;
-    // addressId = objectId2;
-    const { houseNo, street, city, state, pincode, type, latitude, longitude } = req.body;
+    const { houseNo, street, city, state, pincode, type, latitude, longitude, isSelected } = req.body;
 
-    // Validate userId and addressId
+    // Validate IDs
     if (!userId || !mongoose.Types.ObjectId.isValid(userId)) {
         throw new ApiError(400, "Invalid user ID");
     }
-    if (!addressId) {
-        throw new ApiError(400, "Address ID is required");
+    if (!addressId || !mongoose.Types.ObjectId.isValid(addressId)) {
+        throw new ApiError(400, "Invalid address ID");
     }
 
-    // Validate at least one field is provided
-    if (!houseNo && !street && !city && !state && !pincode && !type && latitude === undefined && longitude === undefined) {
+    // Ensure at least one field
+    if (
+        !houseNo &&
+        !street &&
+        !city &&
+        !state &&
+        !pincode &&
+        !type &&
+        latitude === undefined &&
+        longitude === undefined &&
+        isSelected === undefined
+    ) {
         throw new ApiError(400, "At least one field must be provided for update");
     }
 
     // Find customer
     const customer = await Customer.findById(userId);
     if (!customer) throw new ApiError(404, "Customer not found");
-    console.log(addressId, "addressId");
 
     // Find address
     const address = customer.address.id(addressId);
-    console.log("🚀 ~ address:", address)
     if (!address) throw new ApiError(404, "Address not found");
 
-    // Update fields if provided
+    // Update fields
     if (houseNo) address.houseNo = houseNo.trim();
     if (street) address.street = street.trim();
     if (city) address.city = city.trim();
     if (state) address.state = state.trim();
     if (pincode) address.pincode = pincode.trim();
+
     if (type) {
-        if (!['Home', 'Office', 'Other'].includes(type)) {
+        if (!["Home", "Office", "Other"].includes(type)) {
             throw new ApiError(400, "Invalid address type. Must be 'Home', 'Office', or 'Other'");
         }
         address.type = type;
     }
 
-    // Auto-generate latitude & longitude if not manually provided
-    if (latitude === undefined || longitude === undefined) {
-        const fullAddress = `${address.houseNo}, ${address.street}, ${address.city}, ${address.state}, ${address.pincode}`;
+    // Handle isSelected → make this one true, all others false
+    if (typeof isSelected === "boolean" && isSelected === true) {
+        customer.address.forEach(addr => {
+            addr.isSelected = addr._id.equals(addressId); // only this one stays true
+        });
+    } else if (typeof isSelected === "boolean") {
+        address.isSelected = false;
+    }
+
+    // Handle lat/lon
+    if (latitude !== undefined && longitude !== undefined) {
+        address.latitude = latitude;
+        address.longitude = longitude;
+    } else if (!address.latitude || !address.longitude) {
         try {
+            const query = address.pincode || `${address.houseNo}, ${address.street}, ${address.city}, ${address.state}`;
             const response = await axios.get("https://nominatim.openstreetmap.org/search", {
-                params: { q: address.pincode, format: "json", limit: 1 },
-                headers: { 'User-Agent': 'PFM-App/1.0' } // required by Nominatim
+                params: { q: query, format: "json", limit: 1 },
+                headers: { "User-Agent": "PFM-App/1.0" }
             });
 
-            if (response.data && response.data.length > 0) {
+            if (response.data?.length > 0) {
                 address.latitude = parseFloat(response.data[0].lat);
                 address.longitude = parseFloat(response.data[0].lon);
             } else {
-                // fallback to null if not found
                 address.latitude = null;
                 address.longitude = null;
             }
@@ -297,19 +393,18 @@ const editAddress = asyncHandler(async (req, res) => {
             address.latitude = null;
             address.longitude = null;
         }
-    } else {
-        // If lat/lon provided manually
-        address.latitude = latitude;
-        address.longitude = longitude;
     }
 
-    // Save customer
+    // Save
     await customer.save();
 
-    return res.status(200).json(
-        new ApiResponse(200, address, "Address updated successfully with updated location")
-    );
+    return res
+        .status(200)
+        .json(new ApiResponse(200, address, "Address updated successfully"));
 });
+
+
+
 
 const deleteAddress = asyncHandler(async (req, res) => {
     const { userId, addressId } = req.params;
