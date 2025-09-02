@@ -127,26 +127,54 @@ const customerLogout = asyncHandler(async (req, res) => {
 
 // address ========================== 
 
+// const displayAddress = asyncHandler(async (req, res) => {
+//     const { userId } = req.params;
+//     // const objectId = new mongoose.Types.ObjectId(userId);
+//     // userId = objectId;
+//     // Validate userId
+//     if (!userId || !mongoose.Types.ObjectId.isValid(userId)) {
+//         throw new ApiError(400, "Invalid user ID");
+//     }
+
+//     // Find customer and select address field
+//     const customer = await Customer.findById(userId).select('address');
+
+//     if (!customer) {
+//         throw new ApiError(404, "Customer not found");
+//     }
+
+//     return res.status(200).json(
+//         new ApiResponse(200, customer.address || [], "Customer addresses retrieved successfully")
+//     );
+// });
+
 const displayAddress = asyncHandler(async (req, res) => {
     const { userId } = req.params;
-    // const objectId = new mongoose.Types.ObjectId(userId);
-    // userId = objectId;
+
     // Validate userId
     if (!userId || !mongoose.Types.ObjectId.isValid(userId)) {
         throw new ApiError(400, "Invalid user ID");
     }
 
     // Find customer and select address field
-    const customer = await Customer.findById(userId).select('address');
+    const customer = await Customer.findById(userId).select("address");
 
     if (!customer) {
         throw new ApiError(404, "Customer not found");
     }
 
+    // Reorder: selected address first
+    const addresses = [...customer.address].sort((a, b) => {
+        if (a.isSelected && !b.isSelected) return -1;
+        if (!a.isSelected && b.isSelected) return 1;
+        return 0;
+    });
+
     return res.status(200).json(
-        new ApiResponse(200, customer.address || [], "Customer addresses retrieved successfully")
+        new ApiResponse(200, addresses, "Customer addresses retrieved successfully")
     );
 });
+
 
 const addAddress = asyncHandler(async (req, res) => {
     const { userId } = req.params;
