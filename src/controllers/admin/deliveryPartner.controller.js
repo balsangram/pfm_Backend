@@ -90,7 +90,7 @@ const createDeliveryPartner = asyncHandler(async (req, res) => {
             insuranceDocuments: 'pending'
         },
         overallDocumentStatus: 'pending',
-        isActive: false,
+        isActive: true,
         totalDeliveries: 0,
         totalAccepted: 0,
         totalRejected: 0,

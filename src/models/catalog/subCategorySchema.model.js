@@ -118,15 +118,16 @@ const SubCategorySchema = new mongoose.Schema(
 // Optional compound index if you frequently search/filter by type + price
 SubCategorySchema.index({ type: 1, price: 1 });
 
-// ✅ Pre-save middleware to calculate discountPrice
+// ✅ Pre-save middleware to calculate discountPrice with 2 decimals
 SubCategorySchema.pre("save", function (next) {
     if (this.discount && this.price) {
-        // Calculate discounted price
-        this.discountPrice = this.price - (this.price * this.discount) / 100;
+        let discounted = this.price - (this.price * this.discount) / 100;
+        this.discountPrice = Number(discounted.toFixed(2)); // ✅ round to 2 decimals
     } else {
-        this.discountPrice = this.price; // If no discount, discountPrice = price
+        this.discountPrice = Number(this.price.toFixed(2)); // ✅ also round normal price
     }
     next();
 });
+
 
 export default mongoose.model("SubCategory", SubCategorySchema);
