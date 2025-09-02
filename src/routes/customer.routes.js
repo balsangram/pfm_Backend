@@ -51,6 +51,7 @@ router.get("/order-history/:userId", customerCartController.orderHistory);
 router.post("/create-order/:userId", createOrder);
 router.post("/cancel-order/:userId/:orderId", customerCartController.cancelOrder);
 router.get("/order-status/:orderId" , customerCartController.orderStatusDisplay);
+router.get("/order-details/:orderId" , customerCartController.orderDetails);
 
 // wishlist
 // 1. display all categories cards ===

@@ -819,6 +819,77 @@ const cancelOrder = asyncHandler(async (req, res) => {
     });
 });
 
+
+// ✅ Fetch order details
+const orderDetails = asyncHandler(async (req, res) => {
+    const { orderId } = req.params;
+
+    // Validate ObjectId
+    if (!orderId || !orderId.match(/^[0-9a-fA-F]{24}$/)) {
+        throw new ApiError(400, "Invalid order ID");
+    }
+
+    const order = await Order.findById(orderId)
+        .populate("customer", "name email phone")
+        .populate("deliveryPartner", "name phone")
+        .populate("store", "name address phone")
+        .populate("manager", "name email phone");
+
+    if (!order) {
+        throw new ApiError(404, "Order not found");
+    }
+
+    // 📝 Build formatted response like in your screenshot
+    const itemTotal = order.orderDetails.reduce(
+        (sum, item) => sum + item.price * item.quantity,
+        0
+    );
+
+    const deliveryCharges = order.deliveryCharges || 30; // fallback
+    const discount = order.discount || 0;
+    const grandTotal = itemTotal + deliveryCharges - discount;
+
+    const responseData = {
+        orderId: order._id,
+        status: order.status, // e.g. "delivered"
+        store: {
+            name: order.store?.name || "Unknown Store",
+            address: order.store?.address || "",
+            phone: order.store?.phone || "",
+        },
+        items: order.orderDetails.map((item) => ({
+            name: item.name,
+            quantity: item.quantity,
+            price: item.price,
+            total: item.price * item.quantity,
+        })),
+        billDetails: {
+            itemTotal,
+            deliveryCharges,
+            discount,
+            grandTotal,
+        },
+        deliveryAddress: {
+            name: order.clientName,
+            location: order.location,
+            pincode: order.pincode,
+            phone: order.phone,
+        },
+        timestamps: {
+            createdAt: order.createdAt,
+            estimatedDeliveryTime: order.estimatedDeliveryTime,
+            actualDeliveryTime: order.actualDeliveryTime,
+        },
+    };
+
+    return res
+        .status(200)
+        .json(new ApiResponse(200, responseData, "Order details fetched successfully"));
+});
+
+
+
+
 const totalProductAmount = asyncHandler(async (req, res) => {
     const { userId } = req.params;
 
@@ -932,6 +1003,7 @@ export const customerCartController = {
     orderHistory,
     createOrder,
     cancelOrder,
+    orderDetails,
 
     totalProductAmount,
 
