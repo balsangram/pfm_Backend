@@ -192,7 +192,7 @@ export const createOrder = asyncHandler(async (req, res) => {
         geoLocation: { type: "Point", coordinates: [longitude, latitude] },
         orderDetails: orderItems,
         phone: phone || customer.phone,
-        amount: totalAmount,
+        amount: totalAmount + 39,
         store: nearestStore._id,
         manager: nearestStore.manager._id,
         notes: notes || "",
@@ -264,7 +264,7 @@ export const reOrder = asyncHandler(async (req, res) => {
         geoLocation: { type: "Point", coordinates: [longitude, latitude] },
         orderDetails: orderItems,   // ✅ reusing old order items
         phone: phone || customer.phone,
-        amount: totalAmount,
+        amount: totalAmount + 39,
         store: nearestStore._id,
         manager: nearestStore.manager._id,
         notes: notes || "",
