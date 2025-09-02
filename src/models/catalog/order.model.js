@@ -18,6 +18,11 @@ const orderItemSchema = new mongoose.Schema(
             required: true,
             min: 0
         },
+        img: {
+            type: String, // store image URL (recommended)
+            required: false,
+            trim: true
+        }
     },
     { _id: true } // keep _id to reference individual items
 );

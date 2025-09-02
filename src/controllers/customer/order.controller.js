@@ -152,6 +152,7 @@ async function prepareOrderData(customer, latitude, longitude, pincode) {
         name: item.subCategory.name,
         quantity: item.count,
         price: item.subCategory.price,
+        img: item.subCategory.img || null
     }));
 
     return { nearestStore, orderItems };
@@ -218,6 +219,73 @@ export const createOrder = asyncHandler(async (req, res) => {
 });
 
 
+export const reOrder = asyncHandler(async (req, res) => {
+    const { userId, orderId } = req.params;
+    const { location, phone, latitude, longitude, notes, isUrgent, pincode, walletPoint, couponsId } = req.body;
 
+    // 1️⃣ Validate userId
+    if (!userId || !mongoose.Types.ObjectId.isValid(userId)) {
+        throw new ApiError(400, "Invalid customer ID");
+    }
 
+    // 2️⃣ Validate orderId
+    if (!orderId || !mongoose.Types.ObjectId.isValid(orderId)) {
+        throw new ApiError(400, "Invalid order ID");
+    }
 
+    // 3️⃣ Fetch old order
+    const order = await Order.findById(orderId).populate("customer");
+    if (!order) {
+        throw new ApiError(404, "Original order not found");
+    }
+
+    const customer = order.customer;
+
+    // 4️⃣ Validate lat/long
+    if (latitude == null || longitude == null) {
+        throw new ApiError(400, "Latitude and Longitude are required");
+    }
+
+    // 5️⃣ Use the same products & counts from old order
+    const orderItems = order.orderDetails;
+
+    // 6️⃣ Find nearest store (reuse your helper)
+    const { nearestStore } = await prepareOrderData(customer, latitude, longitude, pincode);
+
+    // 7️⃣ Calculate total amount again (wallet/coupon)
+    const totalAmount = await calculateTotalAmount(customer, orderItems, walletPoint, couponsId, userId);
+
+    // 8️⃣ Create new order
+    const newOrder = await Order.create({
+        customer: customer._id,
+        clientName: customer.name || "Guest",
+        location,
+        pincode: pincode || nearestStore.pincode,
+        geoLocation: { type: "Point", coordinates: [longitude, latitude] },
+        orderDetails: orderItems,   // ✅ reusing old order items
+        phone: phone || customer.phone,
+        amount: totalAmount,
+        store: nearestStore._id,
+        manager: nearestStore.manager._id,
+        notes: notes || "",
+        isUrgent: !!isUrgent,
+        reason: "nearest place", // match schema enum
+    });
+
+    // 9️⃣ Move old cart items to order history
+    if (!Array.isArray(customer.orderHistory)) customer.orderHistory = [];
+    customer.orders.forEach(item => {
+        customer.orderHistory.push({
+            order: newOrder._id,
+            orderedAt: item.orderedAt,
+        });
+    });
+
+    // 🔟 Clear customer cart
+    customer.orders = [];
+    await customer.save();
+
+    return res
+        .status(201)
+        .json(new ApiResponse(201, { order: newOrder, nearestStore }, "Order created successfully"));
+});

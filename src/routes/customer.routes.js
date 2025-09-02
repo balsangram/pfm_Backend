@@ -5,7 +5,7 @@ import { customerCategoriesController } from "../controllers/customer/categories
 import { customerCartController } from "../controllers/customer/customerCart.controller.js";
 import { customerProfileController } from "../controllers/customer/customerProfile.controller.js";
 import { customerCouponsController } from "../controllers/customer/coupons.controller.js";
-import { createOrder } from "../controllers/customer/order.controller.js";
+import { createOrder, reOrder } from "../controllers/customer/order.controller.js";
 import { noteficationControl } from "../controllers/customer/notefication.controller.js";
 import subCategorySchemaModel from "../models/catalog/subCategorySchema.model.js";
 
@@ -49,9 +49,10 @@ router.get("/cart-details/:userId", customerCartController.totalProductAmount); 
 //order related
 router.get("/order-history/:userId", customerCartController.orderHistory);
 router.post("/create-order/:userId", createOrder);
+router.post("/re-order/:userId/order/:orderId", reOrder)
 router.post("/cancel-order/:userId/:orderId", customerCartController.cancelOrder);
-router.get("/order-status/:orderId" , customerCartController.orderStatusDisplay);
-router.get("/order-details/:orderId" , customerCartController.orderDetails);
+router.get("/order-status/:orderId", customerCartController.orderStatusDisplay);
+router.get("/order-details/:orderId", customerCartController.orderDetails);
 
 // wishlist
 // 1. display all categories cards ===
