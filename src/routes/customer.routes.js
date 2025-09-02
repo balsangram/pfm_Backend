@@ -48,6 +48,7 @@ router.get("/cart-details/:userId", customerCartController.totalProductAmount); 
 
 //order related
 router.get("/order-history/:userId", customerCartController.orderHistory);
+router.delete("/delete-order-history/:orderId", customerCartController.deleteHistoryOrder)
 router.post("/create-order/:userId", createOrder);
 router.post("/re-order/:userId/order/:orderId", reOrder)
 router.post("/cancel-order/:userId/:orderId", customerCartController.cancelOrder);

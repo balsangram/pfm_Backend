@@ -119,15 +119,18 @@ const SubCategorySchema = new mongoose.Schema(
 SubCategorySchema.index({ type: 1, price: 1 });
 
 // ✅ Pre-save middleware to calculate discountPrice with 2 decimals
+// 
+// ✅ Pre-save middleware to calculate discountPrice with exact 2 decimals
 SubCategorySchema.pre("save", function (next) {
     if (this.discount && this.price) {
         let discounted = this.price - (this.price * this.discount) / 100;
-        this.discountPrice = Number(discounted.toFixed(2)); // ✅ round to 2 decimals
+        this.discountPrice = Math.round((discounted + Number.EPSILON) * 100) / 100;
     } else {
-        this.discountPrice = Number(this.price.toFixed(2)); // ✅ also round normal price
+        this.discountPrice = Math.round((this.price + Number.EPSILON) * 100) / 100;
     }
     next();
 });
+
 
 
 export default mongoose.model("SubCategory", SubCategorySchema);

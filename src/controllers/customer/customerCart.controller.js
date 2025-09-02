@@ -688,12 +688,12 @@ const orderHistory = asyncHandler(async (req, res) => {
                     image: item.img || null, // ✅ safe check for product image
                 });
             }),
-            billDetails: {
-                itemTotal,
-                deliveryCharges,
-                discount,
-                grandTotal,
-            },
+            // billDetails: {
+            //     itemTotal,
+            //     deliveryCharges,
+            //     discount,
+            //     grandTotal,
+            // },
             timestamps: {
                 orderedAt: order.createdAt,
                 deliveredAt: order.actualDeliveryTime || null,
@@ -706,6 +706,24 @@ const orderHistory = asyncHandler(async (req, res) => {
         .json(new ApiResponse(200, formattedOrders, "Order history fetched successfully"));
 });
 
+export const deleteHistoryOrder = asyncHandler(async (req, res) => {
+    const { orderId } = req.params;
+
+    if (!orderId) {
+        throw new ApiError(400, "Order ID is required");
+    }
+
+    // ✅ Find and delete
+    const deletedOrder = await Order.findByIdAndDelete(orderId);
+
+    if (!deletedOrder) {
+        throw new ApiError(404, "Order not found");
+    }
+
+    return res.status(200).json(
+        new ApiResponse(200, "Order history deleted successfully")
+    );
+});
 
 // const createOrder = asyncHandler(async (req, res) => {
 
@@ -1074,6 +1092,7 @@ export const customerCartController = {
     orderHistory,
     // createOrder,
     cancelOrder,
+    deleteHistoryOrder,
     orderDetails,
     totalProductAmount,
 
