@@ -204,6 +204,7 @@ console.log('🔍 DeliveryPartner Routes - Validation schemas details:', {
 router.get("/ongoing-orders", getOngoingOrders);
 router.get("/completed-orders", getCompletedOrders);
 
+
 // Profile section
 router.get("/profile/info", getProfileInfo);
 router.get("/profile/stats", getProfileStats);

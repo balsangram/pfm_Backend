@@ -27,8 +27,8 @@ const couponsSchema = new mongoose.Schema({
     },
     limit: {
         type: Number,
-        required: [true, "Limit is required"],
-        min: [1, "Limit must be at least 1"]
+        // required: [true, "Limit is required"],
+        // min: [1, "Limit must be at least 1"]
     }
 }, { timestamps: true });
 

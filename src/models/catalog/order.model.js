@@ -22,7 +22,13 @@ const orderItemSchema = new mongoose.Schema(
             type: String, // store image URL (recommended)
             required: false,
             trim: true
-        }
+        },
+        orderId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "SubCategory",   // ✅ reference SubCategory
+            required: true,
+        },
+
     },
     { _id: true } // keep _id to reference individual items
 );

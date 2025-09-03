@@ -7,6 +7,7 @@ import Store from "../../models/store/store.model.js";
 import Manager from "../../models/manager/manager.model.js";
 import Order from "../../models/catalog/order.model.js";
 import Coupons from "../../models/catalog/coupons.model.js";
+import SubCategory from "../../models/catalog/coupons.model.js"
 
 // Utility function to calculate distance between two lat/long points
 export function getDistanceFromLatLonInKm(lat1, lon1, lat2, lon2) {
@@ -146,14 +147,17 @@ async function prepareOrderData(customer, latitude, longitude, pincode) {
     }
     const manager = await Manager.findById(nearestStore.manager._id);
     if (!manager) throw new ApiError(404, "Manager not found for nearest store");
+    // console.log(customer.orders, "customer.orders");
 
     // Prepare order items
     const orderItems = customer.orders.map(item => ({
         name: item.subCategory.name,
         quantity: item.count,
         price: item.subCategory.price,
-        img: item.subCategory.img || null
+        img: item.subCategory.img || null,
+        orderId: item.subCategory.id || null
     }));
+    console.log("🚀 ~ prepareOrderData ~ orderItems: ============", orderItems)
 
     return { nearestStore, orderItems };
 }
@@ -218,10 +222,79 @@ export const createOrder = asyncHandler(async (req, res) => {
         .json(new ApiResponse(201, { order: newOrder, nearestStore }, "Order created successfully"));
 });
 
+// export const reOrder = asyncHandler(async (req, res) => {
+//     const { userId, orderId } = req.params;
+
+//     // 1️⃣ Validate userId
+//     if (!userId || !mongoose.Types.ObjectId.isValid(userId)) {
+//         throw new ApiError(400, "Invalid customer ID");
+//     }
+
+//     // 2️⃣ Validate orderId
+//     if (!orderId || !mongoose.Types.ObjectId.isValid(orderId)) {
+//         throw new ApiError(400, "Invalid order ID");
+//     }
+
+//     // 3️⃣ Fetch old order with orderDetails.subCategory populated
+//     const order = await Order.findById(orderId);
+//     console.log("🚀 ~ order ===:", order.orderDetails)
+//     const allProducts = order.orderDetails
+//     const orderDetails = allProducts.map(p => ({
+//         product: p._id,     // store product reference (_id from SubCategory)
+//         quantity: p.quantity
+//     }));
+//     console.log("🚀 ~ orderDetails:", orderDetails)
+
+
+//     if (!order) {
+//         throw new ApiError(404, "Original order not found");
+//     }
+
+//     // 4️⃣ Fetch customer
+//     const customer = await Customer.findById(userId);
+//     if (!customer) {
+//         throw new ApiError(404, "Customer not found");
+//     }
+
+//     // 5️⃣ Re-add items from old order
+//     order.orderDetails.forEach((item) => {
+//         if (!item.subCategory) return; // skip if no valid subCategory
+
+//         const subCategoryId = item.subCategory._id;
+
+//         // Find if same item already exists in customer cart
+//         const existingOrder = customer.orders.find(
+//             (cartItem) => cartItem.subCategory.toString() === subCategoryId.toString()
+//         );
+
+//         if (existingOrder) {
+//             // ✅ If already exists → increment count
+//             existingOrder.count += item.quantity;
+//         } else {
+//             // ✅ If new → add it fresh
+//             customer.orders.push({
+//                 subCategory: subCategoryId,
+//                 count: item.quantity,
+//                 orderedAt: new Date(),
+//             });
+//         }
+//     });
+
+//     // 6️⃣ Save updated customer cart
+//     await customer.save();
+
+//     // 7️⃣ Return populated cart
+//     const updatedCustomer = await Customer.findById(userId)
+//         .populate("orders.subCategory");
+
+//     return res
+//         .status(201)
+//         .json(new ApiResponse(201, updatedCustomer.orders, "Reorder added to cart successfully"));
+// });
+
 
 export const reOrder = asyncHandler(async (req, res) => {
     const { userId, orderId } = req.params;
-    const { location, phone, latitude, longitude, notes, isUrgent, pincode, walletPoint, couponsId } = req.body;
 
     // 1️⃣ Validate userId
     if (!userId || !mongoose.Types.ObjectId.isValid(userId)) {
@@ -233,59 +306,50 @@ export const reOrder = asyncHandler(async (req, res) => {
         throw new ApiError(400, "Invalid order ID");
     }
 
-    // 3️⃣ Fetch old order
-    const order = await Order.findById(orderId).populate("customer");
+    // 3️⃣ Fetch old order with populated SubCategory reference
+    const order = await Order.findById(orderId).populate("orderDetails.orderId");
     if (!order) {
         throw new ApiError(404, "Original order not found");
     }
 
-    const customer = order.customer;
-
-    // 4️⃣ Validate lat/long
-    if (latitude == null || longitude == null) {
-        throw new ApiError(400, "Latitude and Longitude are required");
+    // 4️⃣ Fetch customer
+    const customer = await Customer.findById(userId);
+    if (!customer) {
+        throw new ApiError(404, "Customer not found");
     }
 
-    // 5️⃣ Use the same products & counts from old order
-    const orderItems = order.orderDetails;
+    // 5️⃣ Loop through old order items
+    order.orderDetails.forEach((item) => {
+        if (!item.orderId) return; // skip invalid ones
 
-    // 6️⃣ Find nearest store (reuse your helper)
-    const { nearestStore } = await prepareOrderData(customer, latitude, longitude, pincode);
+        const subCategoryId = item.orderId._id;
 
-    // 7️⃣ Calculate total amount again (wallet/coupon)
-    const totalAmount = await calculateTotalAmount(customer, orderItems, walletPoint, couponsId, userId);
+        // Find if product already exists in customer.orders
+        const existingOrder = customer.orders.find(
+            (cartItem) => cartItem.subCategory.toString() === subCategoryId.toString()
+        );
 
-    // 8️⃣ Create new order
-    const newOrder = await Order.create({
-        customer: customer._id,
-        clientName: customer.name || "Guest",
-        location,
-        pincode: pincode || nearestStore.pincode,
-        geoLocation: { type: "Point", coordinates: [longitude, latitude] },
-        orderDetails: orderItems,   // ✅ reusing old order items
-        phone: phone || customer.phone,
-        amount: totalAmount + 39,
-        store: nearestStore._id,
-        manager: nearestStore.manager._id,
-        notes: notes || "",
-        isUrgent: !!isUrgent,
-        reason: "nearest place", // match schema enum
+        if (existingOrder) {
+            // ✅ Already exists → increase count
+            existingOrder.count += item.quantity;
+        } else {
+            // ✅ Not in cart → add new entry
+            customer.orders.push({
+                subCategory: subCategoryId,
+                count: item.quantity,
+                orderedAt: new Date(),
+            });
+        }
     });
 
-    // 9️⃣ Move old cart items to order history
-    if (!Array.isArray(customer.orderHistory)) customer.orderHistory = [];
-    customer.orders.forEach(item => {
-        customer.orderHistory.push({
-            order: newOrder._id,
-            orderedAt: item.orderedAt,
-        });
-    });
-
-    // 🔟 Clear customer cart
-    customer.orders = [];
+    // 6️⃣ Save updated cart
     await customer.save();
+
+    // 7️⃣ Return populated customer cart
+    const updatedCustomer = await Customer.findById(userId)
+        .populate("orders.subCategory");
 
     return res
         .status(201)
-        .json(new ApiResponse(201, { order: newOrder, nearestStore }, "Order created successfully"));
+        .json(new ApiResponse(201, updatedCustomer.orders, "Reorder added to cart successfully"));
 });

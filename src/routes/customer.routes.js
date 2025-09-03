@@ -50,10 +50,12 @@ router.get("/cart-details/:userId", customerCartController.totalProductAmount); 
 router.get("/order-history/:userId", customerCartController.orderHistory);
 router.delete("/delete-order-history/:orderId", customerCartController.deleteHistoryOrder)
 router.post("/create-order/:userId", createOrder);
-router.post("/re-order/:userId/order/:orderId", reOrder)
+router.get("/re-order/:userId/order/:orderId", reOrder)
 router.post("/cancel-order/:userId/:orderId", customerCartController.cancelOrder);
 router.get("/order-status/:orderId", customerCartController.orderStatusDisplay);
 router.get("/order-details/:orderId", customerCartController.orderDetails);
+
+
 
 // wishlist
 // 1. display all categories cards ===
