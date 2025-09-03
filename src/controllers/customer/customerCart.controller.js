@@ -1032,8 +1032,10 @@ const orderStatusDisplay = asyncHandler(async (req, res) => {
     if (customerId) {
         query.customer = customerId;
     }
-
+    const displayOrder = await Order.findOne(query)
+    console.log("🚀 ~ displayOrder:", displayOrder)
     const order = await Order.findOne(query).select("_id status deliveryStatus");
+    console.log("🚀 ~ order:", order)
     if (!order) {
         throw new ApiError(404, "Order not found");
     }
@@ -1077,6 +1079,7 @@ const orderStatusDisplay = asyncHandler(async (req, res) => {
                     status: order.status,
                     deliveryStatus: order.deliveryStatus,
                     stages: stageBooleans,
+                    displayOrder,
                 },
                 "Order status fetched successfully"
             )

@@ -292,7 +292,6 @@ export const createOrder = asyncHandler(async (req, res) => {
 //         .json(new ApiResponse(201, updatedCustomer.orders, "Reorder added to cart successfully"));
 // });
 
-
 export const reOrder = asyncHandler(async (req, res) => {
     const { userId, orderId } = req.params;
 
