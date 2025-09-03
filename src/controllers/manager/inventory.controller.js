@@ -13,7 +13,7 @@ const getInventoryCategories = asyncHandler(async (req, res) => {
             path: 'typeCategories',
             populate: {
                 path: 'subCategories',
-                select: 'name img quantity price discount discountPrice type weight pieces serves totalEnergy'
+                select: 'name img quantity price discount discountPrice type weight pieces serves totalEnergy unit'
             }
         })
         .select('name img typeCategories');
@@ -36,7 +36,7 @@ const getInventoryByCategory = asyncHandler(async (req, res) => {
             path: 'typeCategories',
             populate: {
                 path: 'subCategories',
-                select: 'name img quantity price discount discountPrice type weight pieces serves totalEnergy'
+                select: 'name img quantity price discount discountPrice type weight pieces serves totalEnergy unit'
             }
         })
         .select('name img typeCategories');
@@ -59,7 +59,7 @@ const getInventoryByTypeCategory = asyncHandler(async (req, res) => {
     }
 
     const typeCategory = await TypeCategory.findById(id)
-        .populate('subCategories', 'name img quantity price discount discountPrice type weight pieces serves totalEnergy')
+        .populate('subCategories', 'name img quantity price discount discountPrice type weight pieces serves totalEnergy unit')
         .select('name img subCategories');
 
     if (!typeCategory) {
@@ -123,7 +123,7 @@ const updateProductQuantity = asyncHandler(async (req, res) => {
 // Get low stock products (quantity < 10)
 const getLowStockProducts = asyncHandler(async (req, res) => {
     const lowStockProducts = await SubCategory.find({ quantity: { $lt: 10 } })
-        .select('name img quantity price discount discountPrice type weight pieces serves totalEnergy')
+        .select('name img quantity price discount discountPrice type weight pieces serves totalEnergy unit')
         .sort({ quantity: 1 });
 
     res.status(200).json(
@@ -134,7 +134,7 @@ const getLowStockProducts = asyncHandler(async (req, res) => {
 // Get out of stock products (quantity = 0)
 const getOutOfStockProducts = asyncHandler(async (req, res) => {
     const outOfStockProducts = await SubCategory.find({ quantity: 0 })
-        .select('name img quantity price discount discountPrice type weight pieces serves totalEnergy')
+        .select('name img quantity price discount discountPrice type weight pieces serves totalEnergy unit')
         .sort({ name: 1 });
 
     res.status(200).json(

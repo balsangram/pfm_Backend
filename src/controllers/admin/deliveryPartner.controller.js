@@ -157,7 +157,6 @@ const getAllDeliveryPartners = asyncHandler(async (req, res) => {
         search
     } = req.query;
 
-    const skip = (page - 1) * limit;
     const filter = {};
 
     // Apply filters
@@ -170,22 +169,45 @@ const getAllDeliveryPartners = asyncHandler(async (req, res) => {
         ];
     }
 
-    const deliveryPartners = await DeliveryPartner.find(filter)
-        .select('-__v')
-        .sort({ createdAt: -1 })
-        .skip(skip)
-        .limit(parseInt(limit));
-
-    const total = await DeliveryPartner.countDocuments(filter);
+    // If limit is -1 or very high, return all records without pagination
+    const limitNum = parseInt(limit);
+    const shouldPaginate = limitNum > 0 && limitNum < 10000;
+    
+    let deliveryPartners;
+    let total;
+    
+    if (shouldPaginate) {
+        // Normal pagination
+        const skip = (page - 1) * limitNum;
+        deliveryPartners = await DeliveryPartner.find(filter)
+            .select('-__v')
+            .populate('store', 'name')
+            .sort({ createdAt: -1 }) // Newest first
+            .skip(skip)
+            .limit(limitNum);
+        total = await DeliveryPartner.countDocuments(filter);
+    } else {
+        // Return all records
+        deliveryPartners = await DeliveryPartner.find(filter)
+            .select('-__v')
+            .populate('store', 'name')
+            .sort({ createdAt: -1 }); // Newest first
+        total = deliveryPartners.length;
+    }
 
     return res.status(200).json(
         new ApiResponse(200, {
             deliveryPartners,
-            pagination: {
+            pagination: shouldPaginate ? {
                 currentPage: parseInt(page),
-                totalPages: Math.ceil(total / limit),
+                totalPages: Math.ceil(total / limitNum),
                 totalItems: total,
-                itemsPerPage: parseInt(limit)
+                itemsPerPage: limitNum
+            } : {
+                currentPage: 1,
+                totalPages: 1,
+                totalItems: total,
+                itemsPerPage: total
             }
         }, "Delivery partners retrieved successfully")
     );
