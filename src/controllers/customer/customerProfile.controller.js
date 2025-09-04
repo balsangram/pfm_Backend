@@ -32,6 +32,7 @@ const customerProfile = asyncHandler(async (req, res) => {
 });
 
 const updateProfile = asyncHandler(async (req, res) => {
+    console.log("🚀 ~ req.body:", req.body)
     const { userId } = req.params;
     const { name, email } = req.body;
     // const objectId = new mongoose.Types.ObjectId(userId);

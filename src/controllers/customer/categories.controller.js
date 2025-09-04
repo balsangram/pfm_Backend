@@ -224,7 +224,6 @@ export const bestSellingProducts = asyncHandler(async (req, res) => {
 });
 
 
-
 const bestSellingProductsById = asyncHandler(async (req, res) => {
     console.log("🚀 ~ req.body:", req.params)
     const { userId } = req.params;
