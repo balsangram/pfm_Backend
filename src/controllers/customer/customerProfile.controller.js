@@ -55,6 +55,7 @@ const updateProfile = asyncHandler(async (req, res) => {
             throw new ApiError(400, "Name must be between 2 and 100 characters");
         }
     }
+    console.log("🚀 ~ email:", email)
     if (email) {
         updateData.email = email.trim().toLowerCase();
         // Basic email validation
@@ -70,6 +71,7 @@ const updateProfile = asyncHandler(async (req, res) => {
         { $set: updateData },
         { new: true, runValidators: true }
     ).select('name phone email');
+    console.log("🚀 ~ updatedCustomer:", updatedCustomer)
 
     if (!updatedCustomer) {
         throw new ApiError(404, "Customer not found");
