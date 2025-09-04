@@ -25,19 +25,19 @@ router.get("/bestSellingProducts", customerCategoriesController.bestSellingProdu
 router.get("/bestSellingProducts/user/:userId", customerCategoriesController.bestSellingProductsById);
 
 // 3. in category under how many sub category cards are here all display
-router.get("/allCategories-subProducts/:id", customerCategoriesController.allCategoriesSubProducts);
+router.get("/allCategories-subProducts/:id", customerCategoriesController.allCategoriesSubProducts); //===_/
 
 // 4. all categoris name with typeCategories cards detaisl display 
 router.get("/categories-types", customerCategoriesController.categoriesTypes);
 
 // 5. based on type card display sub categori cards  
-router.get("/type-categories-all-card/:id", customerCategoriesController.typeCategoriesAllCard)
+router.get("/type-categories-all-card/:id", customerCategoriesController.typeCategoriesAllCard)  //==_/
 
 // 6. display full details of sub categorie card 
 router.get("/full-details-of-sub-categorie-card/:id", customerCategoriesController.fullDetailsOfSubCategorieCard)
 
 // display all subCategory
-router.get("/display-all-subcategory", customerCategoriesController.displayAllSubCategory)
+router.get("/display-all-subcategory", customerCategoriesController.displayAllSubCategory) //== _/
 
 router.get("/search-item", customerCategoriesController.searchItem);
 router.get("/allCategories-search-bottom", customerCategoriesController.allSubCategories_bottom_search);
