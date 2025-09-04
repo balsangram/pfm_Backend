@@ -74,6 +74,9 @@ router.delete("/cart/:userId/item/:itemId", customerCartController.deleteToCart)
 
 router.get("/cart-details/:userId", customerCartController.totalProductAmount); // Remove item
 
+// Notify ===============
+router.post("/notify/:subCategoryId/user/:userId", customerCartController.addNotify);
+
 //order related
 router.get("/order-history/:userId", customerCartController.orderHistory);
 router.delete("/delete-order-history/:orderId", customerCartController.deleteHistoryOrder)

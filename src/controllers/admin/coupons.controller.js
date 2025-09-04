@@ -16,11 +16,11 @@ const displayCoupons = asyncHandler(async (req, res) => {
 
 // Add a new coupon
 const addCoupons = asyncHandler(async (req, res) => {
-    let { name, code, img, discount, expiryDate, limit  } = req.body;
+    let { name, code, img, discount, expiryDate } = req.body;
     console.log("🚀 ~ req.body:", req.body)
 
-    if (!name || !discount || !limit || !expiryDate) {
-        throw new ApiError(400, "Name, discount, limit, and expiryDate are required");
+    if (!name || !discount || !expiryDate) {
+        throw new ApiError(400, "Name, discount, and expiryDate are required");
     }
 
     // Generate unique code if not provided
@@ -39,7 +39,7 @@ const addCoupons = asyncHandler(async (req, res) => {
     const parsedDate = parse(expiryDate, 'dd-MM-yyyy:HH:mm', new Date());
     console.log("🚀 ~ parsedDate:", parsedDate)
 
-    const newCoupon = new Coupons({ name, code, img, discount, expiryDate: parsedDate, limit });
+    const newCoupon = new Coupons({ name, code, img, discount, expiryDate: parsedDate });
     console.log("🚀 ~ newCoupon:", newCoupon)
     await newCoupon.save();
 

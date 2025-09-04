@@ -5,6 +5,8 @@ import TypeCategory from "../../models/catalog/typeCategories.model.js";
 import SubCategory from "../../models/catalog/subCategorySchema.model.js";
 import mongoose from "mongoose";
 import Customers from "../../models/customer/customer.model.js"
+import Notify from "../../models/notification/notify.model.js"; // adjust path
+
 
 // const allCategories = asyncHandler(async (req, res) => {
 //     // Fetch only name and img
@@ -85,44 +87,141 @@ const allCategories = asyncHandler(async (req, res) => {
 // });
 
 
+// export const bestSellingProducts = asyncHandler(async (req, res) => {
+//     const { userId } = req.query;
+
+//     // 1️⃣ Fetch best sellers but exclude `quantity`
+//     let bestSellers = await SubCategory.find({ bestSellers: true })
+//         .sort({ createdAt: -1 })
+//         .select("-quantity")
+//         .lean();
+
+//     if (!bestSellers || bestSellers.length === 0) {
+//         return res.status(404).json({ message: "No best-selling products found" });
+//     }
+
+//     // 2️⃣ Add count based on userId
+//     if (userId && mongoose.Types.ObjectId.isValid(userId)) {
+//         const customer = await Customers.findById(userId).select("orders");
+
+//         if (customer) {
+//             const orderMap = new Map();
+//             customer.orders.forEach(order => {
+//                 orderMap.set(order.subCategory.toString(), order.count);
+//             });
+
+//             bestSellers = bestSellers.map(sub => ({
+//                 ...sub,
+//                 count: orderMap.get(sub._id.toString()) || 0
+//             }));
+//         }
+//     } else {
+//         bestSellers = bestSellers.map(sub => ({
+//             ...sub,
+//             count: 0
+//         }));
+//     }
+
+//     res.status(200).json(bestSellers);
+// });
+
+
+// export const bestSellingProducts = asyncHandler(async (req, res) => {
+//     const { userId } = req.query;
+
+//     // 1️⃣ Fetch best sellers but exclude `quantity`
+//     let bestSellers = await SubCategory.find({ bestSellers: true })
+//         .sort({ createdAt: -1 })
+//         .select("-quantity ")
+//         .lean();
+
+//     if (!bestSellers || bestSellers.length === 0) {
+//         return res.status(404).json({ message: "No best-selling products found" });
+//     }
+
+//     // 2️⃣ Add count + notify based on userId
+//     if (userId && mongoose.Types.ObjectId.isValid(userId)) {
+//         const customer = await Customers.findById(userId).select("orders");
+//         const notifies = await Notify.find({ users: userId }).select("subCategory");
+
+//         // build maps
+//         const orderMap = new Map();
+//         if (customer) {
+//             customer.orders.forEach(order => {
+//                 orderMap.set(order.subCategory.toString(), order.count);
+//             });
+//         }
+
+//         const notifySet = new Set(notifies.map(n => n.subCategory.toString()));
+
+//         bestSellers = bestSellers.map(sub => ({
+//             ...sub,
+//             count: orderMap.get(sub._id.toString()) || 0,
+//             notify: notifySet.has(sub._id.toString()), // true/false
+//         }));
+//     } else {
+//         // Default: count = 0 and notify = false
+//         bestSellers = bestSellers.map(sub => ({
+//             ...sub,
+//             count: 0,
+//             notify: false,
+//         }));
+//     }
+
+//     res.status(200).json(bestSellers);
+// });
+
 export const bestSellingProducts = asyncHandler(async (req, res) => {
     const { userId } = req.query;
 
-    // 1️⃣ Fetch best sellers but exclude `quantity`
+    // 1️⃣ Fetch best sellers (exclude quantity but keep available)
     let bestSellers = await SubCategory.find({ bestSellers: true })
         .sort({ createdAt: -1 })
-        .select("-quantity")
+        .select("-quantity") // exclude quantity
         .lean();
 
     if (!bestSellers || bestSellers.length === 0) {
         return res.status(404).json({ message: "No best-selling products found" });
     }
 
-    // 2️⃣ Add count based on userId
+    // ✅ Recalculate available (fallback safety check)
+    bestSellers = bestSellers.map(sub => ({
+        ...sub,
+        available: sub.available ?? (sub.quantity?.some(q => q.count > 0) || false),
+    }));
+
+    // 2️⃣ Add count + notify based on userId
     if (userId && mongoose.Types.ObjectId.isValid(userId)) {
         const customer = await Customers.findById(userId).select("orders");
+        const notifies = await Notify.find({ users: userId }).select("subCategory");
 
+        // build order map
+        const orderMap = new Map();
         if (customer) {
-            const orderMap = new Map();
             customer.orders.forEach(order => {
                 orderMap.set(order.subCategory.toString(), order.count);
             });
-
-            bestSellers = bestSellers.map(sub => ({
-                ...sub,
-                count: orderMap.get(sub._id.toString()) || 0
-            }));
         }
-    } else {
+
+        // build notify set
+        const notifySet = new Set(notifies.map(n => n.subCategory.toString()));
+
         bestSellers = bestSellers.map(sub => ({
             ...sub,
-            count: 0
+            count: orderMap.get(sub._id.toString()) || 0,
+            notify: notifySet.has(sub._id.toString()),
+        }));
+    } else {
+        // Default: count = 0 and notify = false
+        bestSellers = bestSellers.map(sub => ({
+            ...sub,
+            count: 0,
+            notify: false,
         }));
     }
 
     res.status(200).json(bestSellers);
 });
-
 
 
 
@@ -195,6 +294,67 @@ const bestSellingProductsById = asyncHandler(async (req, res) => {
 //     );
 // });
 
+// const allCategoriesSubProducts = asyncHandler(async (req, res) => {
+//     const { id } = req.params;          // category id
+//     const { userId } = req.query;       // optional userId
+//     console.log("🚀 ~ userId:", userId)
+
+//     if (!mongoose.Types.ObjectId.isValid(id)) {
+//         return res.status(400).json(new ApiResponse(400, null, "Invalid category ID"));
+//     }
+
+//     // 1️⃣ Fetch the category + subcategories
+//     const category = await Categories.findById(id).populate({
+//         path: "typeCategories",
+//         populate: {
+//             path: "subCategories",
+//             select: "name img description weight pieces serves price available",
+//         },
+//     });
+
+//     if (!category) {
+//         return res.status(404).json(new ApiResponse(404, null, "Category not found"));
+//     }
+
+//     // Collect all subcategories
+//     let allSubCategories = [];
+//     category.typeCategories.forEach(tc => {
+//         allSubCategories.push(...tc.subCategories.map(sc => sc.toObject())); // convert to plain object
+//     });
+
+//     // 2️⃣ If userId is provided → fetch customer orders & merge counts
+//     if (userId && mongoose.Types.ObjectId.isValid(userId)) {
+//         const customer = await Customers.findById(userId).select("orders");
+
+//         if (customer) {
+//             // Create a map of subCategoryId → count
+//             const orderMap = new Map();
+//             customer.orders.forEach(order => {
+//                 orderMap.set(order.subCategory.toString(), order.count);
+//             });
+
+//             // Attach count to each subCategory (default 0 if not ordered yet)
+//             allSubCategories = allSubCategories.map(sub => ({
+//                 ...sub,
+//                 count: orderMap.get(sub._id.toString()) || 0,
+//             }));
+//             console.log("🚀 ~ allSubCategories:", allSubCategories)
+//         }
+//     } else {
+
+//         // If no userId, just set count = 0 for all
+//         allSubCategories = allSubCategories.map(sub => ({
+//             ...sub,
+//             count: 0,
+//         }));
+//     }
+
+//     res.status(200).json(
+//         new ApiResponse(200, allSubCategories, "Sub-products retrieved successfully")
+//     );
+// });
+
+
 const allCategoriesSubProducts = asyncHandler(async (req, res) => {
     const { id } = req.params;          // category id
     const { userId } = req.query;       // optional userId
@@ -220,40 +380,48 @@ const allCategoriesSubProducts = asyncHandler(async (req, res) => {
     // Collect all subcategories
     let allSubCategories = [];
     category.typeCategories.forEach(tc => {
-        allSubCategories.push(...tc.subCategories.map(sc => sc.toObject())); // convert to plain object
+        allSubCategories.push(...tc.subCategories.map(sc => sc.toObject()));
     });
 
     // 2️⃣ If userId is provided → fetch customer orders & merge counts
+    let orderMap = new Map();
     if (userId && mongoose.Types.ObjectId.isValid(userId)) {
         const customer = await Customers.findById(userId).select("orders");
 
         if (customer) {
-            // Create a map of subCategoryId → count
-            const orderMap = new Map();
             customer.orders.forEach(order => {
                 orderMap.set(order.subCategory.toString(), order.count);
             });
-
-            // Attach count to each subCategory (default 0 if not ordered yet)
-            allSubCategories = allSubCategories.map(sub => ({
-                ...sub,
-                count: orderMap.get(sub._id.toString()) || 0,
-            }));
-            console.log("🚀 ~ allSubCategories:", allSubCategories)
         }
-    } else {
-        console.log("krll")
-        // If no userId, just set count = 0 for all
-        allSubCategories = allSubCategories.map(sub => ({
-            ...sub,
-            count: 0,
-        }));
     }
+
+    // 3️⃣ Fetch all Notify docs for these subCategories at once
+    const subCategoryIds = allSubCategories.map(sc => sc._id);
+    let notifyMap = new Map();
+
+    if (userId && mongoose.Types.ObjectId.isValid(userId)) {
+        const notifyDocs = await Notify.find({
+            subCategory: { $in: subCategoryIds },
+            users: userId, // only docs where this user exists
+        }).select("subCategory");
+
+        notifyDocs.forEach(doc => {
+            notifyMap.set(doc.subCategory.toString(), true);
+        });
+    }
+
+    // 4️⃣ Attach count + notify flag
+    allSubCategories = allSubCategories.map(sub => ({
+        ...sub,
+        count: orderMap.get(sub._id.toString()) || 0,
+        notify: notifyMap.get(sub._id.toString()) || false, // ✅ true/false
+    }));
 
     res.status(200).json(
         new ApiResponse(200, allSubCategories, "Sub-products retrieved successfully")
     );
 });
+
 
 
 const categoriesTypes = asyncHandler(async (req, res) => {
@@ -291,6 +459,61 @@ const categoriesTypes = asyncHandler(async (req, res) => {
 //     );
 // });
 
+// const typeCategoriesAllCard = asyncHandler(async (req, res) => {
+//     const { id } = req.params;   // typeCategoryId
+//     const { userId } = req.query; // optional userId
+
+//     if (!mongoose.Types.ObjectId.isValid(id)) {
+//         return res.status(400).json(new ApiResponse(400, null, "Invalid type category ID"));
+//     }
+
+//     // 1️⃣ Find typeCategory and populate subCategories (hide quantity field)
+//     const typeCategory = await TypeCategory.findById(id)
+//         .select("name subCategories")
+//         .populate({
+//             path: "subCategories",
+//             select: "name img description weight pieces serves price available", // hide quantity
+//         })
+//         .lean();
+
+//     if (!typeCategory) {
+//         return res.status(404).json(new ApiResponse(404, null, "Type category not found"));
+//     }
+
+//     let subCategories = typeCategory.subCategories;
+
+//     // 2️⃣ If userId is provided → fetch counts from customer.orders
+//     if (userId && mongoose.Types.ObjectId.isValid(userId)) {
+//         const customer = await Customers.findById(userId).select("orders");
+
+//         if (customer) {
+//             const orderMap = new Map();
+//             customer.orders.forEach(order => {
+//                 orderMap.set(order.subCategory.toString(), order.count);
+//             });
+
+//             subCategories = subCategories.map(sub => ({
+//                 ...sub,
+//                 count: orderMap.get(sub._id.toString()) || 0,
+//             }));
+//         }
+//     } else {
+//         // Default → set count = 0
+//         subCategories = subCategories.map(sub => ({
+//             ...sub,
+//             count: 0,
+//         }));
+//     }
+
+//     // 3️⃣ Replace subCategories with enriched version
+//     typeCategory.subCategories = subCategories;
+
+//     res.status(200).json(
+//         new ApiResponse(200, typeCategory, "Type category with sub-products retrieved successfully")
+//     );
+// });
+
+
 const typeCategoriesAllCard = asyncHandler(async (req, res) => {
     const { id } = req.params;   // typeCategoryId
     const { userId } = req.query; // optional userId
@@ -314,36 +537,46 @@ const typeCategoriesAllCard = asyncHandler(async (req, res) => {
 
     let subCategories = typeCategory.subCategories;
 
-    // 2️⃣ If userId is provided → fetch counts from customer.orders
-    if (userId && mongoose.Types.ObjectId.isValid(userId)) {
-        const customer = await Customers.findById(userId).select("orders");
+    // 2️⃣ If userId is provided → fetch counts + notify
+    let orderMap = new Map();
+    let notifyMap = new Map();
 
+    if (userId && mongoose.Types.ObjectId.isValid(userId)) {
+        // Get customer orders
+        const customer = await Customers.findById(userId).select("orders");
         if (customer) {
-            const orderMap = new Map();
             customer.orders.forEach(order => {
                 orderMap.set(order.subCategory.toString(), order.count);
             });
-
-            subCategories = subCategories.map(sub => ({
-                ...sub,
-                count: orderMap.get(sub._id.toString()) || 0,
-            }));
         }
-    } else {
-        // Default → set count = 0
-        subCategories = subCategories.map(sub => ({
-            ...sub,
-            count: 0,
-        }));
+
+        // Get notify docs where this user is present
+        const subCategoryIds = subCategories.map(sc => sc._id);
+        const notifyDocs = await Notify.find({
+            subCategory: { $in: subCategoryIds },
+            users: userId,
+        }).select("subCategory");
+
+        notifyDocs.forEach(doc => {
+            notifyMap.set(doc.subCategory.toString(), true);
+        });
     }
 
-    // 3️⃣ Replace subCategories with enriched version
+    // 3️⃣ Attach count + notify flag
+    subCategories = subCategories.map(sub => ({
+        ...sub,
+        count: orderMap.get(sub._id.toString()) || 0,
+        notify: notifyMap.get(sub._id.toString()) || false,
+    }));
+
+    // 4️⃣ Replace subCategories with enriched version
     typeCategory.subCategories = subCategories;
 
     res.status(200).json(
         new ApiResponse(200, typeCategory, "Type category with sub-products retrieved successfully")
     );
 });
+
 
 
 // const fullDetailsOfSubCategorieCard = asyncHandler(async (req, res) => {
@@ -465,13 +698,58 @@ const allSubCategories_bottom_search = asyncHandler(async (req, res) => {
 //     }
 // });
 
+// const displayAllSubCategory = asyncHandler(async (req, res) => {
+//     try {
+//         const { userId } = req.query;
+
+//         // 1️⃣ Fetch all subcategories but exclude "quantity"
+//         let subCategories = await SubCategory.find()
+//             .select("-quantity") // 🚀 hide quantity completely
+//             .sort({ createdAt: -1 })
+//             .lean();
+
+//         if (!subCategories || subCategories.length === 0) {
+//             throw new ApiError(404, "No subcategories found");
+//         }
+
+//         // 2️⃣ If userId is provided, attach count from customer.orders
+//         if (userId && mongoose.Types.ObjectId.isValid(userId)) {
+//             const customer = await Customers.findById(userId).select("orders");
+
+//             if (customer) {
+//                 const orderMap = new Map();
+//                 customer.orders.forEach(order => {
+//                     orderMap.set(order.subCategory.toString(), order.count);
+//                 });
+
+//                 subCategories = subCategories.map(sub => ({
+//                     ...sub,
+//                     count: orderMap.get(sub._id.toString()) || 0,
+//                 }));
+//             }
+//         } else {
+//             // 3️⃣ No userId → all counts = 0
+//             subCategories = subCategories.map(sub => ({
+//                 ...sub,
+//                 count: 0,
+//             }));
+//         }
+
+//         return res
+//             .status(200)
+//             .json(new ApiResponse(200, subCategories, "Subcategories fetched successfully"));
+//     } catch (error) {
+//         throw new ApiError(500, error.message || "Failed to fetch subcategories");
+//     }
+// });
+
 const displayAllSubCategory = asyncHandler(async (req, res) => {
     try {
         const { userId } = req.query;
 
         // 1️⃣ Fetch all subcategories but exclude "quantity"
         let subCategories = await SubCategory.find()
-            .select("-quantity") // 🚀 hide quantity completely
+            .select("-quantity")
             .sort({ createdAt: -1 })
             .lean();
 
@@ -479,26 +757,32 @@ const displayAllSubCategory = asyncHandler(async (req, res) => {
             throw new ApiError(404, "No subcategories found");
         }
 
-        // 2️⃣ If userId is provided, attach count from customer.orders
+        // 2️⃣ If userId is provided → enrich with count + notify
         if (userId && mongoose.Types.ObjectId.isValid(userId)) {
             const customer = await Customers.findById(userId).select("orders");
+            const notifies = await Notify.find({ users: userId }).select("subCategory");
 
+            // build maps
+            const orderMap = new Map();
             if (customer) {
-                const orderMap = new Map();
                 customer.orders.forEach(order => {
                     orderMap.set(order.subCategory.toString(), order.count);
                 });
-
-                subCategories = subCategories.map(sub => ({
-                    ...sub,
-                    count: orderMap.get(sub._id.toString()) || 0,
-                }));
             }
+
+            const notifySet = new Set(notifies.map(n => n.subCategory.toString()));
+
+            subCategories = subCategories.map(sub => ({
+                ...sub,
+                count: orderMap.get(sub._id.toString()) || 0,
+                notify: notifySet.has(sub._id.toString()), // true/false
+            }));
         } else {
-            // 3️⃣ No userId → all counts = 0
+            // 3️⃣ No userId → default count = 0 and notify = false
             subCategories = subCategories.map(sub => ({
                 ...sub,
                 count: 0,
+                notify: false,
             }));
         }
 
@@ -509,6 +793,7 @@ const displayAllSubCategory = asyncHandler(async (req, res) => {
         throw new ApiError(500, error.message || "Failed to fetch subcategories");
     }
 });
+
 
 export const customerCategoriesController = {
     allCategories,

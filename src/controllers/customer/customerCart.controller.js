@@ -9,6 +9,7 @@ import Manager from "../../models/manager/manager.model.js"
 import { getNearestStore } from "../../utils/geo.js";
 import Order from "../../models/catalog/order.model.js";
 import Coupons from "../../models/catalog/coupons.model.js";
+import Notify from "../../models/notification/notify.model.js"
 
 // ✅ Display Cart Details
 const displayCartDetails = asyncHandler(async (req, res) => {
@@ -1144,6 +1145,27 @@ const totalProductAmount = asyncHandler(async (req, res) => {
     );
 });
 
+const addNotify = asyncHandler(async (req, res) => {
+    console.log("🚀 ~ req.params:", req.params)
+    const { subCategoryId, userId } = req.params;
+
+    if (!subCategoryId || !userId) {
+        throw new ApiError(400, "subCategoryId and userId are required");
+    }
+
+    // Find or create a notify doc for this subCategory
+    const notify = await Notify.findOneAndUpdate(
+        { subCategory: subCategoryId },
+        { $addToSet: { users: userId } }, // ✅ addToSet prevents duplicates
+        { upsert: true, new: true }       // upsert creates if not exists
+    ).populate("users", "name phone");   // optional populate
+
+    return res
+        .status(200)
+        .json(new ApiResponse(200, notify, "User added to notify list successfully"));
+});
+
+
 const orderStatusDisplay = asyncHandler(async (req, res) => {
     const { orderId } = req.params;
 
@@ -1225,6 +1247,8 @@ export const customerCartController = {
     orderDetails,
     userOrders,
     totalProductAmount,
+
+    addNotify,
 
     orderStatusDisplay,
 }
