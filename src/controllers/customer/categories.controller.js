@@ -45,6 +45,10 @@ const bestSellingProducts = asyncHandler(async (req, res) => {
     res.status(200).json(bestSellers);
 });
 
+
+
+
+
 const bestSellingProductsById = asyncHandler(async (req, res) => {
     console.log("🚀 ~ req.body:", req.params)
     const { userId } = req.params;
@@ -95,7 +99,7 @@ const allCategoriesSubProducts = asyncHandler(async (req, res) => {
             path: "typeCategories",
             populate: {
                 path: "subCategories",
-                select: "name img description weight pieces serves price", // select needed fields
+                select: "name img description weight pieces serves price available", // select needed fields
             },
         });
 

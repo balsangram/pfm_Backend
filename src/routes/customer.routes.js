@@ -15,6 +15,34 @@ const router = Router();
 router.post("/send-otp", customerSendOtp);
 router.post("/verify-login", customerVerifyLogin);
 
+// wishlist
+// 1. display all categories cards ===
+router.get("/allCategories", customerCategoriesController.allCategories);
+// router.get("/allCategories", customerCategoriesController.allCategoriesWithCount);
+
+// 2. display all bestSelling products ===
+router.get("/bestSellingProducts", customerCategoriesController.bestSellingProducts);
+router.get("/bestSellingProducts/user/:userId", customerCategoriesController.bestSellingProductsById);
+
+// 3. in category under how many sub category cards are here all display
+router.get("/allCategories-subProducts/:id", customerCategoriesController.allCategoriesSubProducts);
+
+// 4. all categoris name with typeCategories cards detaisl display 
+router.get("/categories-types", customerCategoriesController.categoriesTypes);
+
+// 5. based on type card display sub categori cards  
+router.get("/type-categories-all-card/:id", customerCategoriesController.typeCategoriesAllCard)
+
+// 6. display full details of sub categorie card 
+router.get("/full-details-of-sub-categorie-card/:id", customerCategoriesController.fullDetailsOfSubCategorieCard)
+
+// display all subCategory
+router.get("/display-all-subcategory", customerCategoriesController.displayAllSubCategory)
+
+router.get("/search-item", customerCategoriesController.searchItem);
+router.get("/allCategories-search-bottom", customerCategoriesController.allSubCategories_bottom_search);
+
+
 // Customer refresh token route
 router.post("/refresh-token", customerRefreshToken);
 
@@ -54,35 +82,9 @@ router.get("/re-order/:userId/order/:orderId", reOrder)
 router.post("/cancel-order/:userId/:orderId", customerCartController.cancelOrder);
 router.get("/order-status/:orderId", customerCartController.orderStatusDisplay);
 router.get("/order-details/:orderId", customerCartController.orderDetails);
+router.get("/user-all-order/:userId", customerCartController.userOrders); //======
 
 
-
-// wishlist
-// 1. display all categories cards ===
-router.get("/allCategories", customerCategoriesController.allCategories);
-// router.get("/allCategories", customerCategoriesController.allCategoriesWithCount);
-
-// 2. display all bestSelling products ===
-router.get("/bestSellingProducts", customerCategoriesController.bestSellingProducts);
-router.get("/bestSellingProducts/user/:userId", customerCategoriesController.bestSellingProductsById);
-
-// 3. in category under how many sub category cards are here all display
-router.get("/allCategories-subProducts/:id", customerCategoriesController.allCategoriesSubProducts);
-
-// 4. all categoris name with typeCategories cards detaisl display 
-router.get("/categories-types", customerCategoriesController.categoriesTypes);
-
-// 5. based on type card display sub categori cards  
-router.get("/type-categories-all-card/:id", customerCategoriesController.typeCategoriesAllCard)
-
-// 6. display full details of sub categorie card 
-router.get("/full-details-of-sub-categorie-card/:id", customerCategoriesController.fullDetailsOfSubCategorieCard)
-
-// display all subCategory
-router.get("/display-all-subcategory", customerCategoriesController.displayAllSubCategory)
-
-router.get("/search-item", customerCategoriesController.searchItem);
-router.get("/allCategories-search-bottom", customerCategoriesController.allSubCategories_bottom_search);
 
 // notefication 
 router.get("/get-notefication/:userId", noteficationControl.displayUserNoteficatio);

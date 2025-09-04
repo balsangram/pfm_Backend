@@ -216,10 +216,13 @@ export const createOrder = asyncHandler(async (req, res) => {
     // 8️⃣ Clear customer's cart
     customer.orders = [];
     await customer.save();
+    // ✅ Get the last entry from orderHistory
+    const lastOrder = customer.orderHistory[customer.orderHistory.length - 1];
 
     return res
         .status(201)
-        .json(new ApiResponse(201, { order: newOrder, nearestStore }, "Order created successfully"));
+        .json(new ApiResponse(201, lastOrder, "Order created successfully"));
+    // .json(new ApiResponse(201, { order: newOrder, nearestStore }, "Order created successfully"));
 });
 
 // export const reOrder = asyncHandler(async (req, res) => {

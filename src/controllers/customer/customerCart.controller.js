@@ -635,6 +635,77 @@ const deleteToCart = asyncHandler(async (req, res) => {
 //         .json(new ApiResponse(201, { order: newOrder, nearestStore }, "Order created successfully"));
 // });
 
+// const orderHistory = asyncHandler(async (req, res) => {
+//     const { userId } = req.params;
+
+//     // Validate userId
+//     if (!userId || !mongoose.Types.ObjectId.isValid(userId)) {
+//         throw new ApiError(400, "Invalid customer ID");
+//     }
+
+//     // Fetch orders
+//     const orders = await Order.find({ customer: userId })
+//         .populate("store", "name address phone")       // ✅ using address instead of location
+//         .populate("manager", "name email phone")
+//         .populate("deliveryPartner", "name phone")
+
+//         .sort({ createdAt: -1 });
+
+//     if (!orders.length) {
+//         return res
+//             .status(200)
+//             .json(new ApiResponse(200, [], "No orders found for this user"));
+//     }
+
+//     // Format response
+//     const formattedOrders = orders.map((order) => {
+//         const itemTotal = order.orderDetails.reduce(
+//             (sum, item) => sum + item.price * item.quantity,
+//             0
+//         );
+
+//         console.log(order, "OREDR ====");
+//         const deliveryCharges = order.deliveryCharges ?? 30; // ✅ fallback
+//         const discount = order.discount ?? 0; // ✅ fallback
+//         const grandTotal = itemTotal + deliveryCharges - discount;
+
+//         return {
+//             orderId: order._id,
+//             status: order.status,
+//             store: {
+//                 name: order.store?.name || "Unknown Store",
+//                 address: order.location || "",  // ✅ fixed
+//                 phone: order.store?.phone || "",
+//             },
+
+//             items: order.orderDetails.map((item) => {
+//                 console.log("🚀 ~ item:", item)
+//                 return ({
+//                     name: item.name,
+//                     quantity: item.quantity,
+//                     price: item.price,
+//                     total: item.price * item.quantity,
+//                     image: item.img || null, // ✅ safe check for product image
+//                 });
+//             }),
+//             // billDetails: {
+//             //     itemTotal,
+//             //     deliveryCharges,
+//             //     discount,
+//             //     grandTotal,
+//             // },
+//             timestamps: {
+//                 orderedAt: order.createdAt,
+//                 deliveredAt: order.actualDeliveryTime || null,
+//             },
+//         };
+//     });
+
+//     return res
+//         .status(200)
+//         .json(new ApiResponse(200, formattedOrders, "Order history fetched successfully"));
+// });
+
 const orderHistory = asyncHandler(async (req, res) => {
     const { userId } = req.params;
 
@@ -643,18 +714,20 @@ const orderHistory = asyncHandler(async (req, res) => {
         throw new ApiError(400, "Invalid customer ID");
     }
 
-    // Fetch orders
-    const orders = await Order.find({ customer: userId })
-        .populate("store", "name address phone")       // ✅ using address instead of location
+    // ✅ Fetch only delivered or cancelled orders
+    const orders = await Order.find({
+        customer: userId,
+        status: { $in: ["delivered", "cancelled"] }
+    })
+        .populate("store", "name address phone")
         .populate("manager", "name email phone")
         .populate("deliveryPartner", "name phone")
-
         .sort({ createdAt: -1 });
 
     if (!orders.length) {
         return res
             .status(200)
-            .json(new ApiResponse(200, [], "No orders found for this user"));
+            .json(new ApiResponse(200, [], "No delivered or cancelled orders found for this user"));
     }
 
     // Format response
@@ -664,36 +737,25 @@ const orderHistory = asyncHandler(async (req, res) => {
             0
         );
 
-        console.log(order, "OREDR ====");
-        const deliveryCharges = order.deliveryCharges ?? 30; // ✅ fallback
-        const discount = order.discount ?? 0; // ✅ fallback
+        const deliveryCharges = order.deliveryCharges ?? 30;
+        const discount = order.discount ?? 0;
         const grandTotal = itemTotal + deliveryCharges - discount;
 
         return {
             orderId: order._id,
-            status: order.status,
+            status: order.status, // ✅ will be only delivered or cancelled
             store: {
                 name: order.store?.name || "Unknown Store",
-                address: order.location || "",  // ✅ fixed
+                address: order.location || "",
                 phone: order.store?.phone || "",
             },
-
-            items: order.orderDetails.map((item) => {
-                console.log("🚀 ~ item:", item)
-                return ({
-                    name: item.name,
-                    quantity: item.quantity,
-                    price: item.price,
-                    total: item.price * item.quantity,
-                    image: item.img || null, // ✅ safe check for product image
-                });
-            }),
-            // billDetails: {
-            //     itemTotal,
-            //     deliveryCharges,
-            //     discount,
-            //     grandTotal,
-            // },
+            items: order.orderDetails.map((item) => ({
+                name: item.name,
+                quantity: item.quantity,
+                price: item.price,
+                total: item.price * item.quantity,
+                image: item.img || null,
+            })),
             timestamps: {
                 orderedAt: order.createdAt,
                 deliveredAt: order.actualDeliveryTime || null,
@@ -705,6 +767,7 @@ const orderHistory = asyncHandler(async (req, res) => {
         .status(200)
         .json(new ApiResponse(200, formattedOrders, "Order history fetched successfully"));
 });
+
 
 export const deleteHistoryOrder = asyncHandler(async (req, res) => {
     const { orderId } = req.params;
@@ -976,6 +1039,69 @@ const orderDetails = asyncHandler(async (req, res) => {
         .json(new ApiResponse(200, responseData, "Order details fetched successfully"));
 });
 
+const userOrders = asyncHandler(async (req, res) => {
+    const { userId } = req.params;
+
+    // Validate userId
+    if (!userId || !mongoose.Types.ObjectId.isValid(userId)) {
+        throw new ApiError(400, "Invalid customer ID");
+    }
+
+    // ✅ Fetch only active orders
+    const activeStatuses = ["pending", "confirmed", "preparing", "ready", "picked_up", "in_transit"];
+
+    const orders = await Order.find({
+        customer: userId,
+        status: { $in: activeStatuses }
+    })
+        .populate("store", "name address phone")
+        .populate("manager", "name email phone")
+        .populate("deliveryPartner", "name phone")
+        .sort({ createdAt: -1 });
+
+    if (!orders.length) {
+        return res
+            .status(200)
+            .json(new ApiResponse(200, [], "No active orders found for this user"));
+    }
+
+    // Format response
+    const formattedOrders = orders.map((order) => {
+        const itemTotal = order.orderDetails.reduce(
+            (sum, item) => sum + item.price * item.quantity,
+            0
+        );
+
+        const deliveryCharges = order.deliveryCharges ?? 30;
+        const discount = order.discount ?? 0;
+        const grandTotal = itemTotal + deliveryCharges - discount;
+
+        return {
+            orderId: order._id,
+            status: order.status, // ✅ will only be active statuses
+            store: {
+                name: order.store?.name || "Unknown Store",
+                address: order.location || "",
+                phone: order.store?.phone || "",
+            },
+            items: order.orderDetails.map((item) => ({
+                name: item.name,
+                quantity: item.quantity,
+                price: item.price,
+                total: item.price * item.quantity,
+                image: item.img || null,
+            })),
+            timestamps: {
+                orderedAt: order.createdAt,
+                deliveredAt: order.actualDeliveryTime || null,
+            },
+        };
+    });
+
+    return res
+        .status(200)
+        .json(new ApiResponse(200, formattedOrders, "Active orders fetched successfully"));
+});
 
 
 
@@ -1097,6 +1223,7 @@ export const customerCartController = {
     cancelOrder,
     deleteHistoryOrder,
     orderDetails,
+    userOrders,
     totalProductAmount,
 
     orderStatusDisplay,
