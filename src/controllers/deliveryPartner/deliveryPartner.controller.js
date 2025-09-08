@@ -534,6 +534,121 @@ export const getProfileStats = asyncHandler(async (req, res) => {
     return res.status(200).json(new ApiResponse(200, stats, "Profile statistics retrieved successfully"));
 });
 
+// Get all-time order statistics for dashboard
+export const getTodayStats = asyncHandler(async (req, res) => {
+    const deliveryPartnerId = req.user._id;
+
+    // Get all orders assigned to this delivery partner (all time)
+    const allOrders = await Order.find({
+        deliveryPartner: deliveryPartnerId
+    }).select('_id status deliveryStatus createdAt');
+
+    // Count orders by status
+    const totalOrders = allOrders.length;
+    const acceptedOrders = allOrders.filter(order => 
+        order.deliveryStatus === 'accepted' || 
+        ['picked_up', 'in_transit', 'delivered'].includes(order.status)
+    ).length;
+    const rejectedOrders = allOrders.filter(order => 
+        order.deliveryStatus === 'rejected'
+    ).length;
+    const ongoingOrders = allOrders.filter(order => 
+        ['picked_up', 'in_transit'].includes(order.status)
+    ).length;
+    const completedOrders = allOrders.filter(order => 
+        order.status === 'delivered'
+    ).length;
+
+    const stats = {
+        totalOrders: totalOrders,
+        accepted: acceptedOrders,
+        rejected: rejectedOrders,
+        ongoing: ongoingOrders,
+        completed: completedOrders,
+        lastUpdated: new Date().toISOString()
+    };
+
+    return res.status(200).json(new ApiResponse(200, stats, "Order statistics retrieved successfully"));
+});
+
+// Get all accepted orders for delivery partner
+export const getAcceptedOrders = asyncHandler(async (req, res) => {
+    const deliveryPartnerId = req.user._id;
+    const { page = 1, limit = 10 } = req.query;
+
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+
+    // Get accepted orders (deliveryStatus: 'accepted' or status in ['picked_up', 'in_transit', 'delivered'])
+    const acceptedOrders = await Order.find({
+        deliveryPartner: deliveryPartnerId,
+        $or: [
+            { deliveryStatus: 'accepted' },
+            { status: { $in: ['picked_up', 'in_transit', 'delivered'] } }
+        ]
+    })
+    .populate('store', 'name location phone')
+    .populate('customer', 'name phone')
+    .select('_id status deliveryStatus amount location clientName createdAt estimatedDeliveryTime actualDeliveryTime')
+    .sort({ createdAt: -1 })
+    .skip(skip)
+    .limit(parseInt(limit));
+
+    const totalAccepted = await Order.countDocuments({
+        deliveryPartner: deliveryPartnerId,
+        $or: [
+            { deliveryStatus: 'accepted' },
+            { status: { $in: ['picked_up', 'in_transit', 'delivered'] } }
+        ]
+    });
+
+    return res.status(200).json(new ApiResponse(200, {
+        orders: acceptedOrders,
+        pagination: {
+            currentPage: parseInt(page),
+            totalPages: Math.ceil(totalAccepted / parseInt(limit)),
+            totalOrders: totalAccepted,
+            hasNext: skip + acceptedOrders.length < totalAccepted,
+            hasPrev: parseInt(page) > 1
+        }
+    }, "Accepted orders retrieved successfully"));
+});
+
+// Get all rejected orders for delivery partner
+export const getRejectedOrders = asyncHandler(async (req, res) => {
+    const deliveryPartnerId = req.user._id;
+    const { page = 1, limit = 10 } = req.query;
+
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+
+    // Get rejected orders (deliveryStatus: 'rejected')
+    const rejectedOrders = await Order.find({
+        deliveryPartner: deliveryPartnerId,
+        deliveryStatus: 'rejected'
+    })
+    .populate('store', 'name location phone')
+    .populate('customer', 'name phone')
+    .select('_id status deliveryStatus amount location clientName createdAt rejectionReason')
+    .sort({ createdAt: -1 })
+    .skip(skip)
+    .limit(parseInt(limit));
+
+    const totalRejected = await Order.countDocuments({
+        deliveryPartner: deliveryPartnerId,
+        deliveryStatus: 'rejected'
+    });
+
+    return res.status(200).json(new ApiResponse(200, {
+        orders: rejectedOrders,
+        pagination: {
+            currentPage: parseInt(page),
+            totalPages: Math.ceil(totalRejected / parseInt(limit)),
+            totalOrders: totalRejected,
+            hasNext: skip + rejectedOrders.length < totalRejected,
+            hasPrev: parseInt(page) > 1
+        }
+    }, "Rejected orders retrieved successfully"));
+});
+
 // Edit delivery partner profile (name)
 export const editProfile = asyncHandler(async (req, res) => {
     const deliveryPartnerId = req.user._id;

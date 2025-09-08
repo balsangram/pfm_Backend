@@ -20,7 +20,10 @@ import {
     getProfileInfo,
     deleteAccount,
     getProfileStats,
-    editProfile
+    editProfile,
+    getTodayStats,
+    getAcceptedOrders,
+    getRejectedOrders
 } from "../controllers/deliveryPartner/deliveryPartner.controller.js";
 import { validateRequest } from "../middlewares/validation.middleware.js";
 import {
@@ -178,6 +181,9 @@ router.post("/documents/upload", uploadDocument);
 
 // Delivery operations
 router.get("/statistics", getDeliveryStatistics);
+router.get("/dashboard/today-stats", getTodayStats);
+router.get("/orders/accepted", getAcceptedOrders);
+router.get("/orders/rejected", getRejectedOrders);
 router.put("/last-active", updateLastActive);
 router.get("/orders", getAssignedOrders);
 
