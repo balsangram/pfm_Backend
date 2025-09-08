@@ -2,6 +2,7 @@ import { asyncHandler } from "../../utils/asyncHandler.js";
 import { ApiResponse } from "../../utils/ApiResponse.js";
 import DeliveryPartner from "../../models/deliveryPartner/deliveryPartner.model.js";
 import Order from "../../models/catalog/order.model.js";
+import DeliveryRejectionLog from "../../models/deliveryPartner/rejectionLog.model.js";
 
 // Get delivery partner profile
 export const getDeliveryPartnerProfile = asyncHandler(async (req, res) => {
@@ -234,11 +235,22 @@ export const respondToOrder = asyncHandler(async (req, res) => {
     }
 
     if (action === 'reject') {
-        // Update delivery partner stats
-        await DeliveryPartner.findByIdAndUpdate(deliveryPartnerId, { 
-            $inc: { totalRejected: 1 } 
+        // Partner rejected at scan stage: do NOT change order status.
+        // Record a rejection log and bump partner's totalRejected.
+        const { reason, notes } = req.body || {};
+        const allowedReasons = ['customer_not_available', 'wrong_address', 'payment_issue', 'order_cancelled', 'other'];
+        const normalizedReason = allowedReasons.includes(reason) ? reason : 'other';
+
+        await DeliveryRejectionLog.create({
+            deliveryPartner: deliveryPartnerId,
+            order: orderId,
+            reason: normalizedReason,
+            notes: notes || ''
         });
-        return res.status(200).json(new ApiResponse(200, { rejected: true }, "Order rejected by delivery partner"));
+
+        await DeliveryPartner.findByIdAndUpdate(deliveryPartnerId, { $inc: { totalRejected: 1 } });
+
+        return res.status(200).json(new ApiResponse(200, { rejected: true }, "Order rejection recorded"));
     }
 
     // Get delivery partner name for pickedUpBy field
@@ -549,9 +561,10 @@ export const getTodayStats = asyncHandler(async (req, res) => {
         order.deliveryStatus === 'accepted' || 
         ['picked_up', 'in_transit', 'delivered'].includes(order.status)
     ).length;
-    const rejectedOrders = allOrders.filter(order => 
-        order.deliveryStatus === 'rejected'
-    ).length;
+    // Use partner's totalRejected + logs for robust count
+    const partner = await DeliveryPartner.findById(deliveryPartnerId).select('totalRejected');
+    const logsCount = await DeliveryRejectionLog.countDocuments({ deliveryPartner: deliveryPartnerId });
+    const rejectedOrders = Math.max(partner?.totalRejected || 0, logsCount);
     const ongoingOrders = allOrders.filter(order => 
         ['picked_up', 'in_transit'].includes(order.status)
     ).length;
@@ -560,9 +573,9 @@ export const getTodayStats = asyncHandler(async (req, res) => {
     ).length;
 
     const stats = {
-        totalOrders: totalOrders,
+        totalOrders: totalOrders + logsCount,
         accepted: acceptedOrders,
-        rejected: rejectedOrders,
+        rejectedByPartner: rejectedOrders,
         ongoing: ongoingOrders,
         completed: completedOrders,
         lastUpdated: new Date().toISOString()
@@ -621,29 +634,37 @@ export const getRejectedOrders = asyncHandler(async (req, res) => {
     const skip = (parseInt(page) - 1) * parseInt(limit);
 
     // Get rejected orders (deliveryStatus: 'rejected')
-    const rejectedOrders = await Order.find({
-        deliveryPartner: deliveryPartnerId,
-        deliveryStatus: 'rejected'
-    })
-    .populate('store', 'name location phone')
-    .populate('customer', 'name phone')
-    .select('_id status deliveryStatus amount location clientName createdAt rejectionReason')
-    .sort({ createdAt: -1 })
-    .skip(skip)
-    .limit(parseInt(limit));
+    // Pull from rejection logs (since rejection at scan doesn't alter order)
+    const logs = await DeliveryRejectionLog.find({ deliveryPartner: deliveryPartnerId })
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(parseInt(limit))
+        .populate({ path: 'order', select: '_id status amount location clientName createdAt store customer' })
+        .populate({ path: 'order.store', select: 'name location phone' })
+        .populate({ path: 'order.customer', select: 'name phone' });
 
-    const totalRejected = await Order.countDocuments({
-        deliveryPartner: deliveryPartnerId,
-        deliveryStatus: 'rejected'
-    });
+    const totalRejected = await DeliveryRejectionLog.countDocuments({ deliveryPartner: deliveryPartnerId });
 
     return res.status(200).json(new ApiResponse(200, {
-        orders: rejectedOrders,
+        orders: logs.map(l => ({
+            _id: l.order?._id,
+            status: l.order?.status,
+            amount: l.order?.amount,
+            location: l.order?.location,
+            clientName: l.order?.clientName,
+            createdAt: l.order?.createdAt,
+            store: l.order?.store,
+            customer: l.order?.customer,
+            deliveryStatus: 'rejected',
+            deliveryRejectionReason: l.reason,
+            deliveryRejectionNotes: l.notes,
+            loggedAt: l.createdAt
+        })),
         pagination: {
             currentPage: parseInt(page),
             totalPages: Math.ceil(totalRejected / parseInt(limit)),
             totalOrders: totalRejected,
-            hasNext: skip + rejectedOrders.length < totalRejected,
+            hasNext: skip + logs.length < totalRejected,
             hasPrev: parseInt(page) > 1
         }
     }, "Rejected orders retrieved successfully"));
