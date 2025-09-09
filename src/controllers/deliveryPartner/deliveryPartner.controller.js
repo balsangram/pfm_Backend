@@ -366,7 +366,7 @@ export const rejectDelivery = asyncHandler(async (req, res) => {
 
     const order = await Order.findOne({
         _id: orderId,
-        deliveryPartner: deliveryPartnerId,
+        deliveryPartner: deliveryPartnerId, 
         status: { $in: ['picked_up', 'in_transit'] }
     });
 
